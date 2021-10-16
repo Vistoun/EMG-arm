@@ -1,0 +1,47 @@
+class Arm{
+public:
+    Arm();
+    Arm(int, int, int, int, int, int, int, int);
+    Arm(const Arm&);
+    virtual ~Arm();
+
+    int getWrist()const;
+    int getThumb()const;
+    int getIndex()const;
+    int getMiddle()const;
+    int getRing()const;
+    int getPinky()const;
+    int getSpeed()const;
+    int getAcceleration()const;
+
+    void setWrist(int);
+    void setThumb(int);
+    void setIndex(int);
+    void setMiddle(int);
+    void setRing(int);
+    void setPinky(int);
+    void setSpeed(int);
+    void setAcceleration(int);
+    
+    void openThumb();
+    void openIndex();
+    void openMiddle();
+    void openRing();
+    void openPinky();
+
+    void closeThumb();
+    void closeIndex();
+    void closeMiddle();
+    void closeRing();
+    void closePinky();
+
+    void openFist();
+    void closeFist();    
+
+
+private:
+int wrist,thumb,index,middle,ring, pinky, speed, acceleration;
+
+//bool kontrola(int, int, int, int, int, int, int, int)const;
+
+};

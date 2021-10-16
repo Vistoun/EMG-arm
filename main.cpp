@@ -1,7 +1,8 @@
 #include <Arduino.h>
 #include <PololuMaestro.h>
+#include "Arm.hpp"
 
-/* On boards with a hardware serial port available for use, use
+ /* On boards with a hardware serial port available for use, use
 that port to communicate with the Maestro. For other boards,
 create a SoftwareSerial object using pin 10 to receive (RX) and
 pin 11 to transmit (TX). */
@@ -14,6 +15,18 @@ pin 11 to transmit (TX). */
 #endif
 
 MicroMaestro maestro(maestroSerial);
+
+
+const int WRIST = 0;
+const int THUMB = 1;
+const int INDEX = 2;
+const int MIDDLE = 3;
+const int RING = 4;
+const int PINKY = 5;
+ 
+const int SPEED = 0; // 0 is fastest
+const int ACCELERATION = 0;
+
 
 
 void setup()
