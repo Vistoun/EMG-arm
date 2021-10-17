@@ -1,7 +1,7 @@
 class Arm{
 public:
     Arm();
-    Arm(int, int, int, int, int, int, int, int);
+    Arm(int, int, int, int, int, int, int, int, int, int);
     Arm(const Arm&);
     virtual ~Arm();
 
@@ -40,7 +40,7 @@ public:
 
 
 private:
-int wrist,thumb,index,middle,ring, pinky, speed, acceleration;
+int wrist,thumb,index,middle,ring, pinky, speed, acceleration, open, close;
 
 //bool kontrola(int, int, int, int, int, int, int, int)const;
 

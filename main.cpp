@@ -2,6 +2,7 @@
 #include <PololuMaestro.h>
 #include "Arm.hpp"
 
+
  /* On boards with a hardware serial port available for use, use
 that port to communicate with the Maestro. For other boards,
 create a SoftwareSerial object using pin 10 to receive (RX) and
@@ -14,8 +15,6 @@ pin 11 to transmit (TX). */
   SoftwareSerial maestroSerial(0, 1);
 #endif
 
-MicroMaestro maestro(maestroSerial);
-
 
 const int WRIST = 0;
 const int THUMB = 1;
@@ -27,43 +26,29 @@ const int PINKY = 5;
 const int SPEED = 0; // 0 is fastest
 const int ACCELERATION = 0;
 
+const int OPEN = 8000;
+const int CLOSE = 3968;
 
 
-void setup()
-{
+MicroMaestro maestro(maestroSerial);
+
+Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
+
+
+
+
+void setup(){
 
   // Set the serial baud rate.
   maestroSerial.begin(9600);
+  
 }
 
-void loop()
-{
+void loop(){
  
-  /* setTarget takes the channel number you want to control, and
-     the target position in units of 1/4 microseconds. A typical
-     RC hobby servo responds to pulses between 1 ms (4000) and 2
-     ms (8000). */
-
-  maestro.setTarget(1, 6000);
-  /* maestro.setTarget(2, 6000);
-  maestro.setTarget(3, 6000);
-  maestro.setTarget(4, 6000);
-  maestro.setTarget(5, 6000); */
+  ruka.closeFist();
   delay(2000);
-
-  // Set the target of channel 0 to 1750 us, and wait 2 seconds.
-  maestro.setTarget(1, 7000);
-  /* maestro.setTarget(2, 7000);
-  maestro.setTarget(3, 7000);
-  maestro.setTarget(4, 7000);
-  maestro.setTarget(5, 7000); */
+  ruka.openFist();
   delay(2000);
-
-  // Set the target of channel 0 to 1250 us, and wait 2 seconds.
-  maestro.setTarget(1, 5000);
- /* maestro.setTarget(2, 5000);
-  maestro.setTarget(3, 5000);
-  maestro.setTarget(4, 5000);
-  maestro.setTarget(5, 5000); */ 
-  delay(2000);
+  
 }
