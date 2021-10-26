@@ -66,34 +66,42 @@ int Arm::getAcceleration()const{
 
 void Arm::setWrist(int wrist){
     this->wrist = wrist;
+    return;
 }
 
 void Arm::setThumb(int thumb){
     this->thumb = thumb;
+    return;
 }
 
 void Arm::setIndex(int index){
     this->index = index;
+    return;
 }
 
 void Arm::setMiddle(int middle){
     this->middle = middle;
+    return;
 }
 
 void Arm::setRing(int ring){
     this->ring = ring;
+    return;
 }
 
 void Arm::setPinky(int pinky){
     this->pinky = pinky;
+    return;
 }
 
 void Arm::setSpeed(int speed){
     this->speed = speed;
+    return;
 }
 
 void Arm::setAcceleration(int acceleration){
     this->acceleration = acceleration;
+    return;
 }
 
 
@@ -101,43 +109,53 @@ void Arm::setAcceleration(int acceleration){
 // 2000 us = 8000
 void Arm::openThumb(){
     maestro.setTarget(this->thumb,this->open);
+    return;
 }
 
 void Arm::openIndex(){
     maestro.setTarget(this->index,this->open);
+    return;
 }
 
 void Arm::openMiddle(){
     maestro.setTarget(this->middle,this->open);
+    return;
 }
 
 void Arm::openRing(){
     maestro.setTarget(this->ring,this->open);
+    return;
 }
 
 void Arm::openPinky(){
     maestro.setTarget(this->pinky,this->open);
+    return;
 }
 
 
 void Arm::closeThumb(){
     maestro.setTarget(this->thumb, close);
+    return;
 }
 
 void Arm::closeIndex(){
     maestro.setTarget(this->index, close);
+    return;
 }
 
 void Arm::closeMiddle(){
     maestro.setTarget(this->middle, close);
+    return;
 }
 
 void Arm::closeRing(){
     maestro.setTarget(this->ring, close);
+    return;
 }
 
 void Arm::closePinky(){
     maestro.setTarget(this->pinky, close);
+    return;
 }
 
 
@@ -147,7 +165,7 @@ void Arm::openFist(){
     openMiddle();
     openRing();
     openPinky();
-
+    return;
 }
 
 void Arm::closeFist(){
@@ -156,4 +174,21 @@ void Arm::closeFist(){
     closeMiddle();
     closeRing();
     closePinky();
+    return;
 }
+
+void Arm::moveFinger(int finger, int pos){
+    maestro.setTarget(finger, pos);
+}
+
+
+
+
+/*
+void Arm::moveFingers(int fingers[], int pos){
+    int element_count = (sizeof(fingers[]) / (sizeof(fingers[0])));
+    for(int i = 0; i < element_count; i++){
+        maestro.setTarget(i, pos);
+    }
+}
+ */

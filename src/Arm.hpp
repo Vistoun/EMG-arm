@@ -38,6 +38,8 @@ public:
     void openFist();
     void closeFist();    
 
+    void moveFinger(int, int);
+   // void moveFingers(int*, int);
 
 private:
 int wrist,thumb,index,middle,ring, pinky, speed, acceleration, open, close;
