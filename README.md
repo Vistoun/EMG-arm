@@ -15,17 +15,17 @@
 ### Červenec 
 - ~~analýza EMG senzorů~~
 - ~~výběr EMG senzorů~~
-- ~~kalibrace EMG senzorů ~~ 
+- ~~kalibrace EMG senzorů~~ 
 
 ### Srpen 
-~~- výběr modelu ruky
-- tisk ruky ~~
+- ~~výběr modelu ruky~~
+- ~~tisk ruky~~
 
 ### Září 
-~~- složení ruky ~~ 
+- ~~složení ruky~~ 
 
 ### Říjen 
-~~- programování ruky ~~
+- ~~programování ruky~~
 - programování senzorů 
 - programování ovládaní přes serial monitor  
 
