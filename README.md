@@ -13,9 +13,9 @@
 ## Harmonogram
 
 ### Červenec 
-~~- analýza EMG senzorů
-- výběr EMG senzorů
-- kalibrace EMG senzorů ~~ 
+- ~~analýza EMG senzorů~~
+- ~~výběr EMG senzorů~~
+- ~~kalibrace EMG senzorů ~~ 
 
 ### Srpen 
 ~~- výběr modelu ruky
