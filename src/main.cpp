@@ -91,7 +91,7 @@ void menuCheck() {
   if (clk == LOW && menuCount >= 5) {
     menuCount = 1;
   }
-
+  /*
   if (menuCount == 1) {
     valA = encoder0Pos;
   }
@@ -101,6 +101,7 @@ void menuCheck() {
   if (menuCount == 3) {
     valC = encoder0Pos;
   }
+  */
 }
 
 
@@ -135,6 +136,10 @@ void setup(){
   // Set the serial baud rate.     
   Serial.begin(9600);
   maestroSerial.begin(9600);
+  pinMode(encoder0PinA, INPUT_PULLUP);
+  pinMode(encoder0PinB, INPUT_PULLUP);
+  pinMode(clk, INPUT_PULLUP);
+
   display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
   display.display();
   display.clearDisplay();
