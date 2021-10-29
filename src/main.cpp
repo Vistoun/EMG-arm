@@ -31,25 +31,27 @@ pin 11 to transmit (TX). */
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
-
-#define encoder0PinA  2
-#define encoder0PinB  3
-
 #define OLED_ADDR   0x3C
 
+#define CLK 2
+#define DT 3
+#define SW 4
 
-
-volatile unsigned int encoder0Pos = 0;
+int pos = 0;
+int currentStateCLK;
+int lastStateCLK;
+String currentDir ="";
+unsigned long lastButtonPress = 0;
 
 const unsigned int SPEED = 0; // 0 is fastest
 const unsigned int ACCELERATION = 0;
 
 const unsigned int OPEN = 8000;
 const unsigned int CLOSE = 3968;
+bool btnClick = 0;
+int currentMenu = 0;
 
-byte clk;
-byte menuCount = 1;
-byte dir = 0;
+
 
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
@@ -59,97 +61,233 @@ MicroMaestro maestro(maestroSerial);
 Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
 
 
-void Menu() {
-  display.setTextSize(2);
-  display.setTextColor(WHITE);
+void updateEncoder(){
+	// Read the current state of CLK
+	currentStateCLK = digitalRead(CLK);
 
-  display.setCursor(10, 0);
-  display.println("EMG ARM");
+	// If last and current state of CLK are different, then pulse occurred
+	// React to only 1 state change to avoid double count
+	if (currentStateCLK != lastStateCLK  && currentStateCLK == 1){
+
+		// If the DT state is different than the CLK state then
+		// the encoder is rotating CCW so decrement
+		if (digitalRead(DT) != currentStateCLK) {
+			pos --;
+      if(pos < 1){
+         pos = 1;
+      }
+     
+			currentDir ="CCW";
+		} else {
+			// Encoder is rotating CW so increment
+			pos ++;
+      if(pos > 5){
+         pos = 5;
+      }
+     
+			currentDir ="CW";
+		}
+
+	
+	}
+
+	// Remember last CLK state
+	lastStateCLK = currentStateCLK;
+  delay(1);
+}
+
+void btnCheck(){
+  btnClick = 0;
+  int btnState = digitalRead(SW);
+  if (btnState == LOW) {
+		//if 50ms have passed since last LOW pulse, it means that the
+		//button has been pressed, released and pressed again
+		if (millis() - lastButtonPress > 50) {
+			Serial.println("Button pressed!");
+      btnClick = 1;
+		}
+
+		// Remember last button press event
+		lastButtonPress = millis();
+	}
+  
+}
+
+void mainMenu(){
+   display.setTextSize(2);
+    display.setTextColor(WHITE);
+
+    display.setCursor(10, 0);
+    display.println("EMG ARM");
+    //---------------------------------
+    display.setTextSize(1);
+    display.setCursor(10, 20);
+    display.println("Manual");
+
+    display.setCursor(10, 30);
+    display.println("EMG");
+
+    display.setCursor(10, 40);
+    display.println("Gesta");
+    
+    display.setCursor(2, (pos * 10) + 10);
+    display.println(">");
+    display.display();
+  
+}
+
+
+void manMenu(){
+  display.setTextColor(WHITE);
   //---------------------------------
   display.setTextSize(1);
+  display.setCursor(10, 10);
+  display.println("Thumb");
+
   display.setCursor(10, 20);
-  display.println("Manual");
+  display.println("Index");
 
   display.setCursor(10, 30);
-  display.println("EMG");
+  display.println("Middle");
 
   display.setCursor(10, 40);
-  display.println("Gesta");
+  display.println("Ring");
 
-  display.setCursor(2, (menuCount * 10) + 10);
+  display.setCursor(10, 50);
+  display.println("Pinky");
+  
+ // Serial.println(pos);
+  display.setCursor(2, (pos * 10) + 10);
   display.println(">");
 
   display.display();
 }
 
+void menuControl() {
 
-void menuCheck() {
-  if (clk == LOW && menuCount < 5) {
-    menuCount++;
-    encoder0Pos = 0;
+
+
+  if(currentMenu == 0){
+    if(btnClick == 1){
+      Serial.println(pos);
+        switch (pos){
+        case 1:
+          Serial.println("currentmenu pos 1");
+          currentMenu = 1;
+          break;
+
+        case 2:
+          currentMenu = 2;
+          break;  
+
+        case 3:
+          currentMenu = 3;
+          break;  
+        }
+    }
+    mainMenu();
   }
-  if (clk == LOW && menuCount >= 5) {
-    menuCount = 1;
+
+
+  else if (currentMenu == 1){
+    manMenu();
   }
-  /*
-  if (menuCount == 1) {
-    valA = encoder0Pos;
-  }
-  if (menuCount == 2) {
-   valB = encoder0Pos;
-  }
-  if (menuCount == 3) {
-    valC = encoder0Pos;
-  }
-  */
+ 
+
 }
 
 
-void doEncoder() {
-  if (digitalRead(encoder0PinA) == HIGH) {
-    if (digitalRead(encoder0PinB) == LOW && encoder0Pos > 0) {
-      encoder0Pos = encoder0Pos - 1;
-      dir = 0;
-    }
-    else {
-      encoder0Pos = encoder0Pos + 1;
-      dir = 1;
-    }
-  }
-  else
-  {
-    if (digitalRead(encoder0PinB) == LOW ) {
-      encoder0Pos = encoder0Pos + 1;
-      dir = 1;
-    }
-    else {
-      if (encoder0Pos > 0) {
-        encoder0Pos = encoder0Pos - 1;
-        dir = 0;
-      }
-    }
-  }
-}
 
 void setup(){
-
+  pinMode(CLK,INPUT);
+	pinMode(DT,INPUT);
+  pinMode(SW, INPUT_PULLUP);
   // Set the serial baud rate.     
-  Serial.begin(9600);
+  Serial.begin(115200);
   maestroSerial.begin(9600);
-  pinMode(encoder0PinA, INPUT_PULLUP);
-  pinMode(encoder0PinB, INPUT_PULLUP);
-  pinMode(clk, INPUT_PULLUP);
+   
+  // Reads the initial state of the outputA
+  
+  lastStateCLK = digitalRead(CLK); 
 
   display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
   display.display();
   display.clearDisplay();
-  attachInterrupt(0, doEncoder, CHANGE);  // encoder pin on interrupt 0 - pin 2
+  attachInterrupt(0, updateEncoder, CHANGE);
+	attachInterrupt(1, updateEncoder, CHANGE);
 }
 
 
 void loop(){
+  btnCheck();
 
+  menuControl();
+  display.clearDisplay();
+  
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /*
