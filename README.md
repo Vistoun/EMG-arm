@@ -13,32 +13,32 @@
 ## Harmonogram
 
 ### Červenec 
-- ~~analýza EMG senzorů~~
-- ~~výběr EMG senzorů~~
-- ~~kalibrace EMG senzorů~~ 
+- ~~Analýza EMG senzorů~~
+- ~~Výběr EMG senzorů~~
+- ~~Kalibrace EMG senzorů~~ 
 
 ### Srpen 
-- ~~výběr modelu ruky~~
-- ~~tisk ruky~~
+- ~~Výběr modelu ruky~~
+- ~~Tisk ruky~~
 
 ### Září 
-- ~~složení ruky~~ 
+- ~~Složení ruky~~ 
 
 ### Říjen 
-- ~~programování ruky~~
-- programování senzorů 
-- programování ovládaní přes serial monitor  
+- ~~Programování ruky~~
+- Programování senzorů 
+- Programování ovládaní pomoci displeje a enkodéru
 
 ### Listopad 
-- dokončování pogramovaní 
-- optimalizace 
-- přidělání a modelování hardwareové části ruky 
+- Dokončování pogramovaní 
+- Optimalizace 
+- Přidělání a modelování hardwareové části ruky 
 
 ### Prosinec 
-- dokumentace 
-- prezentace 
-- schemata 
-- posledni dodelavky
+- Dokumentace 
+- Prezentace 
+- Schemata 
+- Posledni dodělávky
 
 
 ## Zdroje
