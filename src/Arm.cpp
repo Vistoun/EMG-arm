@@ -64,6 +64,33 @@ int Arm::getAcceleration()const{
 
 
 
+int Arm::getWristPos()const{
+    return (maestro.getPosition(wrist));
+}
+
+int Arm::getThumbPos()const{
+    return (maestro.getPosition(thumb));
+}
+
+
+int Arm::getIndexPos()const{
+    return (maestro.getPosition(index));
+}
+
+int Arm::getMiddlePos()const{
+    return (maestro.getPosition(middle));
+}
+
+int Arm::getRingPos()const{
+    return (maestro.getPosition(ring));
+}
+
+int Arm::getPinkyPos()const{
+    return (maestro.getPosition(pinky));
+}
+
+
+
 void Arm::setWrist(int wrist){
     this->wrist = wrist;
     return;

@@ -14,6 +14,15 @@ public:
     int getSpeed()const;
     int getAcceleration()const;
 
+    int getWristPos()const;
+    int getThumbPos()const;
+    int getIndexPos()const;
+    int getMiddlePos()const;
+    int getRingPos()const;
+    int getPinkyPos()const;
+    int getSpeedPos()const;
+
+
     void setWrist(int);
     void setThumb(int);
     void setIndex(int);

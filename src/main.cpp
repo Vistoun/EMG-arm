@@ -7,7 +7,7 @@
 #include "Arm.hpp"
 
 
- /* On boards with a hardware serial port available for use, use
+/* On boards with a hardware serial port available for use, use
 that port to communicate with the Maestro. For other boards,
 create a SoftwareSerial object using pin 10 to receive (RX) and
 pin 11 to transmit (TX). */
@@ -16,11 +16,11 @@ pin 11 to transmit (TX). */
   #define maestroSerial SERIAL_PORT_HARDWARE_OPEN
 #else
   #include <SoftwareSerial.h>
-  SoftwareSerial maestroSerial(0, 1);
+  SoftwareSerial maestroSerial(9, 8);
 #endif
 
-#define PT(s) Serial.print(s)  //makes life easier
-#define PTL(s) Serial.println(s)
+//#define PT(s) Serial.print(s)  //makes life easier
+//#define PTL(s) Serial.println(s)
 
 #define WRIST 0
 #define THUMB 1
@@ -48,15 +48,19 @@ const unsigned int ACCELERATION = 0;
 
 const unsigned int OPEN = 8000;
 const unsigned int CLOSE = 3968;
+
 bool btnClick = 0;
+bool settingServo = 0;
 int currentMenu = 0;
 
+int currentservo = 0;
 
+MicroMaestro maestro(maestroSerial);
 
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
-MicroMaestro maestro(maestroSerial);
+
 
 Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
 
@@ -73,17 +77,18 @@ void updateEncoder(){
 		// the encoder is rotating CCW so decrement
 		if (digitalRead(DT) != currentStateCLK) {
 			pos --;
+      /*
       if(pos < 1){
          pos = 1;
       }
-     
+     */
 			currentDir ="CCW";
 		} else {
 			// Encoder is rotating CW so increment
 			pos ++;
-      if(pos > 5){
+     /* if(pos > 5){
          pos = 5;
-      }
+      } */
      
 			currentDir ="CW";
 		}
@@ -103,7 +108,7 @@ void btnCheck(){
 		//if 50ms have passed since last LOW pulse, it means that the
 		//button has been pressed, released and pressed again
 		if (millis() - lastButtonPress > 50) {
-			Serial.println("Button pressed!");
+			//Serial.println("Button pressed!");
       btnClick = 1;
 		}
 
@@ -114,7 +119,7 @@ void btnCheck(){
 }
 
 void mainMenu(){
-   display.setTextSize(2);
+    display.setTextSize(2);
     display.setTextColor(WHITE);
 
     display.setCursor(10, 0);
@@ -138,41 +143,57 @@ void mainMenu(){
 
 
 void manMenu(){
+  int help = 7;
   display.setTextColor(WHITE);
   //---------------------------------
   display.setTextSize(1);
-  display.setCursor(10, 10);
-  display.println("Thumb");
 
-  display.setCursor(10, 20);
-  display.println("Index");
+  if(pos >= 5 ){
+    display.setCursor(10, 0);
+    display.println("WRIST");
 
-  display.setCursor(10, 30);
-  display.println("Middle");
+    display.setCursor(10,10);
+    display.println("GO BACK"); 
 
-  display.setCursor(10, 40);
-  display.println("Ring");
+    display.setCursor(2, ((pos - (help-1)) * 10) + 10);
+    display.println(">");
+  }
 
-  display.setCursor(10, 50);
-  display.println("Pinky");
-  
- // Serial.println(pos);
-  display.setCursor(2, (pos * 10) + 10);
-  display.println(">");
+  else{
+    display.setCursor(10, 10);
+    display.println("THUMB");
+    display.setCursor(60,10);
+    display.print(ruka.getThumbPos());
+    
+
+    display.setCursor(10, 20);
+    display.println("INDEX");
+
+    display.setCursor(10, 30);
+    display.println("MIDDLE");
+
+    display.setCursor(10, 40);
+    display.println("RING");
+
+    display.setCursor(10, 50);
+    display.println("PINKY");
+    display.setCursor(2, (pos * 10) + 10);
+    display.println(">");
+  }
 
   display.display();
 }
 
+void fingerScreen(int finger){
+  
+}
+
+
 void menuControl() {
-
-
-
   if(currentMenu == 0){
     if(btnClick == 1){
-      Serial.println(pos);
         switch (pos){
         case 1:
-          Serial.println("currentmenu pos 1");
           currentMenu = 1;
           break;
 
@@ -184,17 +205,59 @@ void menuControl() {
           currentMenu = 3;
           break;  
         }
+
     }
     mainMenu();
   }
 
 
   else if (currentMenu == 1){
+    if(btnClick == 1){
+     // Serial.println(pos);
+        switch (pos){
+        case 0:
+          if(settingServo != 1){
+            settingServo = 1;
+            Serial.println("muzes setovat");
+            
+          }else{
+            Serial.println("nemuzes setovat");
+            settingServo = 0;
+          }
+          
+          break;
+
+        case 1:
+          settingServo = 1;
+          break;  
+
+        case 2:
+          settingServo = 1;
+          break;  
+        
+        case 3:
+          settingServo = 1;
+          break;  
+        
+        case 4:
+          settingServo = 1;
+          break;  
+        
+        case 5:
+          settingServo = 1;
+          break;  
+        
+        case 6:
+          currentMenu = 0;
+          break;  
+          
+        }
+    }
     manMenu();
   }
  
-
 }
+
 
 
 
@@ -202,28 +265,37 @@ void setup(){
   pinMode(CLK,INPUT);
 	pinMode(DT,INPUT);
   pinMode(SW, INPUT_PULLUP);
+
   // Set the serial baud rate.     
   Serial.begin(115200);
-  maestroSerial.begin(9600);
-   
-  // Reads the initial state of the outputA
+  maestroSerial.begin(115200);
   
+  // Reads the initial state of the outputA
   lastStateCLK = digitalRead(CLK); 
 
   display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
   display.display();
   display.clearDisplay();
+  
   attachInterrupt(0, updateEncoder, CHANGE);
 	attachInterrupt(1, updateEncoder, CHANGE);
+  
 }
 
 
 void loop(){
   btnCheck();
-
   menuControl();
   display.clearDisplay();
+  if(settingServo == 1){
+    Serial.println(pos*100);
+    currentservo = ruka.getThumbPos(); 
+    Serial.println(ruka.getThumbPos());
+
+    maestro.setTarget(THUMB, currentservo);
+  }
   
+  delay(100);
 }
 
 
