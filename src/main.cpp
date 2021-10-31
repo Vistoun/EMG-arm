@@ -40,27 +40,24 @@ pin 11 to transmit (TX). */
 int pos = 0;
 int currentStateCLK;
 int lastStateCLK;
-String currentDir ="";
 unsigned long lastButtonPress = 0;
 
 const unsigned int SPEED = 0; // 0 is fastest
 const unsigned int ACCELERATION = 0;
 
-const unsigned int OPEN = 8000;
-const unsigned int CLOSE = 3968;
+const int OPEN = 8000;
+const int CLOSE = 3968;
 
 bool btnClick = 0;
 bool settingServo = 0;
 int currentMenu = 0;
-
-int currentservo = 0;
+int servoCon = 0;
+int current_item = -1;
 
 MicroMaestro maestro(maestroSerial);
 
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
-
-
 
 Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
 
@@ -76,24 +73,24 @@ void updateEncoder(){
 		// If the DT state is different than the CLK state then
 		// the encoder is rotating CCW so decrement
 		if (digitalRead(DT) != currentStateCLK) {
-			pos --;
-      /*
-      if(pos < 1){
-         pos = 1;
+      if(settingServo == 0){
+        pos --;
       }
-     */
-			currentDir ="CCW";
+      servoCon -= 200;
+      if( servoCon < CLOSE){
+        servoCon = CLOSE;
+      }
+     
 		} else {
 			// Encoder is rotating CW so increment
-			pos ++;
-     /* if(pos > 5){
-         pos = 5;
-      } */
-     
-			currentDir ="CW";
+      if(settingServo == 0){
+        pos++;
+      }
+      servoCon+=200;
+      if(servoCon > OPEN){
+         servoCon = OPEN;
+      } 
 		}
-
-	
 	}
 
 	// Remember last CLK state
@@ -102,7 +99,6 @@ void updateEncoder(){
 }
 
 void btnCheck(){
-  btnClick = 0;
   int btnState = digitalRead(SW);
   if (btnState == LOW) {
 		//if 50ms have passed since last LOW pulse, it means that the
@@ -110,13 +106,18 @@ void btnCheck(){
 		if (millis() - lastButtonPress > 50) {
 			//Serial.println("Button pressed!");
       btnClick = 1;
-		}
+		}else{
+      btnClick = 0;
+    }
 
 		// Remember last button press event
 		lastButtonPress = millis();
 	}
   
 }
+
+
+
 
 void mainMenu(){
     display.setTextSize(2);
@@ -143,6 +144,7 @@ void mainMenu(){
 
 
 void manMenu(){
+
   int help = 7;
   display.setTextColor(WHITE);
   //---------------------------------
@@ -151,6 +153,8 @@ void manMenu(){
   if(pos >= 5 ){
     display.setCursor(10, 0);
     display.println("WRIST");
+    display.setCursor(60, 0);
+    display.print(ruka.getWristPos());
 
     display.setCursor(10,10);
     display.println("GO BACK"); 
@@ -168,26 +172,67 @@ void manMenu(){
 
     display.setCursor(10, 20);
     display.println("INDEX");
+    display.setCursor(60,20);
+    display.print(ruka.getIndexPos());
 
     display.setCursor(10, 30);
     display.println("MIDDLE");
+    display.setCursor(60, 30);
+    display.print(ruka.getMiddlePos());
 
     display.setCursor(10, 40);
     display.println("RING");
+    display.setCursor(60, 40);
+    display.print(ruka.getRingPos());
 
     display.setCursor(10, 50);
     display.println("PINKY");
-    display.setCursor(2, (pos * 10) + 10);
+    display.setCursor(60, 50);
+    display.print(ruka.getPinkyPos());
+
+    if(settingServo == 1){
+      display.setCursor(2, (current_item * 10) + 10);
+    }else{
+      display.setCursor(2, (pos * 10) + 10);
+    }
+    
     display.println(">");
   }
 
   display.display();
 }
 
-void fingerScreen(int finger){
-  
-}
 
+void fingerMov(){
+  if(settingServo == 1){
+    switch(current_item){
+      case 0:
+      ruka.moveFinger(THUMB, servoCon);
+      break;
+
+      case 1:
+      ruka.moveFinger(INDEX,servoCon);
+      break;
+
+      case 2:
+      ruka.moveFinger(MIDDLE,servoCon);
+      break;
+
+      case 3:
+      ruka.moveFinger(RING,servoCon);
+      break;
+
+      case 4:
+      ruka.moveFinger(PINKY,servoCon);
+      break;
+
+      case 5:
+      ruka.moveFinger(WRIST,servoCon);
+      break;
+    }
+    
+  }
+}
 
 void menuControl() {
   if(currentMenu == 0){
@@ -205,46 +250,83 @@ void menuControl() {
           currentMenu = 3;
           break;  
         }
-
     }
     mainMenu();
   }
 
-
   else if (currentMenu == 1){
     if(btnClick == 1){
-     // Serial.println(pos);
         switch (pos){
         case 0:
           if(settingServo != 1){
             settingServo = 1;
-            Serial.println("muzes setovat");
+            servoCon = 0;
+            current_item = 0;
+            servoCon += ruka.getThumbPos();
             
           }else{
-            Serial.println("nemuzes setovat");
             settingServo = 0;
           }
-          
           break;
 
         case 1:
-          settingServo = 1;
+          if(settingServo != 1){
+            settingServo = 1;
+            servoCon = 0;
+            current_item = 1;
+            servoCon += ruka.getIndexPos();
+            
+          }else{
+            settingServo = 0;
+          }
           break;  
 
         case 2:
-          settingServo = 1;
+          if(settingServo != 1){
+            settingServo = 1;
+            servoCon = 0;
+            current_item = 2;
+            servoCon += ruka.getMiddlePos();
+            
+          }else{
+            settingServo = 0;
+          }
           break;  
         
         case 3:
-          settingServo = 1;
+          if(settingServo != 1){
+            settingServo = 1;
+            servoCon = 0;
+            current_item = 3;
+            servoCon += ruka.getRingPos();
+            
+          }else{
+            settingServo = 0;
+          }
           break;  
         
         case 4:
-          settingServo = 1;
+            if(settingServo != 1){
+            settingServo = 1;
+            servoCon = 0;
+            current_item = 4;
+            servoCon += ruka.getPinkyPos();
+            
+          }else{
+            settingServo = 0;
+          }
           break;  
         
         case 5:
-          settingServo = 1;
+          if(settingServo != 1){
+            settingServo = 1;
+            servoCon = 0;
+            current_item = 5;
+            servoCon += ruka.getWristPos();
+            
+          }else{
+            settingServo = 0;
+          }
           break;  
         
         case 6:
@@ -254,6 +336,7 @@ void menuControl() {
         }
     }
     manMenu();
+    fingerMov();
   }
  
 }
@@ -279,7 +362,7 @@ void setup(){
   
   attachInterrupt(0, updateEncoder, CHANGE);
 	attachInterrupt(1, updateEncoder, CHANGE);
-  
+  ruka.closeFist();
 }
 
 
@@ -287,13 +370,7 @@ void loop(){
   btnCheck();
   menuControl();
   display.clearDisplay();
-  if(settingServo == 1){
-    Serial.println(pos*100);
-    currentservo = ruka.getThumbPos(); 
-    Serial.println(ruka.getThumbPos());
-
-    maestro.setTarget(THUMB, currentservo);
-  }
+ 
   
   delay(100);
 }
