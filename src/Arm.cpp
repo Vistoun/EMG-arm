@@ -208,14 +208,56 @@ void Arm::moveFinger(int finger, int pos){
     maestro.setTarget(finger, pos);
 }
 
-
-
-
-/*
-void Arm::moveFingers(int fingers[], int pos){
-    int element_count = (sizeof(fingers[]) / (sizeof(fingers[0])));
-    for(int i = 0; i < element_count; i++){
-        maestro.setTarget(i, pos);
-    }
+void Arm::thumbsUp(){
+    openThumb();
+    closeIndex();
+    closeMiddle();
+    closeRing();
+    closePinky();
 }
- */
+
+void Arm::v(){
+    closeThumb();
+    openIndex();
+    openMiddle();
+    closeRing();
+    closePinky();
+}
+
+void Arm::ok(){
+    closeThumb();
+    closeIndex();
+    openMiddle();
+    openRing();
+    openPinky();
+}
+
+void Arm::countdown(){
+    openFist();
+    closePinky();
+    delay(1000);
+    closeRing();
+    delay(1000);
+    closeMiddle();
+    delay(1000);
+    closeIndex();
+    delay(1000);
+    closeThumb();
+
+}
+
+void Arm::rock(){
+    openPinky();
+    closeRing();
+    closeMiddle();
+    openIndex();
+    closeThumb();
+}
+
+void Arm::callMe(){
+    openPinky();
+    closeRing();
+    closeMiddle();
+    closeIndex();
+    openThumb();
+}

@@ -48,7 +48,16 @@ public:
     void closeFist();    
 
     void moveFinger(int, int);
-   // void moveFingers(int*, int);
+
+    //Gesta
+    void thumbsUp();
+    void v();
+    void ok();
+    void countdown();
+    void rock();
+    void callMe();
+    
+
 
 private:
 int wrist,thumb,index,middle,ring, pinky, speed, acceleration, open, close;

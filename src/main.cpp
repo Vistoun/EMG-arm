@@ -9,8 +9,8 @@
 
 /* On boards with a hardware serial port available for use, use
 that port to communicate with the Maestro. For other boards,
-create a SoftwareSerial object using pin 10 to receive (RX) and
-pin 11 to transmit (TX). */
+create a SoftwareSerial object using pin D9 to receive (RX) and
+pin D8 to transmit (TX). */
 
 #ifdef SERIAL_PORT_HARDWARE_OPEN
   #define maestroSerial SERIAL_PORT_HARDWARE_OPEN
@@ -19,8 +19,12 @@ pin 11 to transmit (TX). */
   SoftwareSerial maestroSerial(9, 8);
 #endif
 
-//#define PT(s) Serial.print(s)  //makes life easier
-//#define PTL(s) Serial.println(s)
+#define PT(s) Serial.print(s)  //makes life easier
+#define PTL(s) Serial.println(s)
+
+#define DPT(s) diplay.print(s)
+#define DPTL(s) display.println(s)
+#define DSC(x,y) display.setCursor(x,y)
 
 #define WRIST 0
 #define THUMB 1
@@ -31,7 +35,7 @@ pin 11 to transmit (TX). */
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
-#define OLED_ADDR   0x3C
+#define OLED_ADDR   0x3C // OLED I2C address
 
 #define CLK 2
 #define DT 3
@@ -106,14 +110,13 @@ void btnCheck(){
 		if (millis() - lastButtonPress > 50) {
 			//Serial.println("Button pressed!");
       btnClick = 1;
-		}else{
-      btnClick = 0;
-    }
+		}
 
 		// Remember last button press event
 		lastButtonPress = millis();
-	}
-  
+	}else{
+      btnClick = 0;
+  }
 }
 
 
@@ -123,21 +126,22 @@ void mainMenu(){
     display.setTextSize(2);
     display.setTextColor(WHITE);
 
-    display.setCursor(10, 0);
-    display.println("EMG ARM");
+    DSC(10, 0);
+    DPTL("EMG ARM");
+
     //---------------------------------
     display.setTextSize(1);
-    display.setCursor(10, 20);
-    display.println("Manual");
+    DSC(10, 20);
+    DPTL("Manual");
 
-    display.setCursor(10, 30);
-    display.println("EMG");
+    DSC(10, 30);
+    DPTL("EMG");
 
-    display.setCursor(10, 40);
-    display.println("Gesta");
+    DSC(10, 40);
+    DPTL("Gesta");
     
-    display.setCursor(2, (pos * 10) + 10);
-    display.println(">");
+    DSC(2, (pos * 10) + 10);
+    DPTL(">");
     display.display();
   
 }
@@ -145,58 +149,59 @@ void mainMenu(){
 
 void manMenu(){
 
-  int help = 7;
+ // int help = 7;
   display.setTextColor(WHITE);
-  //---------------------------------
   display.setTextSize(1);
 
   if(pos >= 5 ){
-    display.setCursor(10, 0);
-    display.println("WRIST");
-    display.setCursor(60, 0);
-    display.print(ruka.getWristPos());
 
-    display.setCursor(10,10);
-    display.println("GO BACK"); 
+    DSC(10, 10);
+    DPTL("WRIST");
+    DSC(60, 10);
+    DPT(ruka.getWristPos());
 
-    display.setCursor(2, ((pos - (help-1)) * 10) + 10);
-    display.println(">");
+    DSC(10,20);
+    DPTL("GO BACK"); 
+
+    DSC(2, ((pos - 5) * 10) + 10);
+    //DSC(2, ((pos - (help-1)) * 10) + 10);
+    DPTL(">");
   }
 
   else{
-    display.setCursor(10, 10);
-    display.println("THUMB");
-    display.setCursor(60,10);
-    display.print(ruka.getThumbPos());
+    DSC(10, 10);
+    DPTL("THUMB");
+    DSC(60,10);
+    DPT(ruka.getThumbPos());
     
 
-    display.setCursor(10, 20);
-    display.println("INDEX");
-    display.setCursor(60,20);
-    display.print(ruka.getIndexPos());
+    DSC(10, 20);
+    DPTL("INDEX");
+    DSC(60,20);
+    DPT(ruka.getIndexPos());
 
-    display.setCursor(10, 30);
-    display.println("MIDDLE");
-    display.setCursor(60, 30);
-    display.print(ruka.getMiddlePos());
+    DSC(10, 30);
+    DPTL("MIDDLE");
+    DSC(60, 30);
+    DPT(ruka.getMiddlePos());
 
-    display.setCursor(10, 40);
-    display.println("RING");
-    display.setCursor(60, 40);
-    display.print(ruka.getRingPos());
+    DSC(10, 40);
+    DPTL("RING");
+    DSC(60, 40);
+    DPT(ruka.getRingPos());
 
-    display.setCursor(10, 50);
-    display.println("PINKY");
-    display.setCursor(60, 50);
-    display.print(ruka.getPinkyPos());
+    DSC(10, 50);
+    DPTL("PINKY");
+    DSC(60, 50);
+    DPT(ruka.getPinkyPos());
 
     if(settingServo == 1){
-      display.setCursor(2, (current_item * 10) + 10);
+      DSC(2, (current_item * 10) + 10);
     }else{
-      display.setCursor(2, (pos * 10) + 10);
+      DSC(2, (pos * 10) + 10);
     }
     
-    display.println(">");
+    DPTL(">");
   }
 
   display.display();
@@ -234,7 +239,52 @@ void fingerMov(){
   }
 }
 
+void emgMenu(){
+  display.setTextColor(WHITE);
+  //---------------------------------
+  display.setTextSize(1);
+
+}
+
+void gestaMenu(){
+   display.setTextColor(WHITE);
+  //---------------------------------
+  display.setTextSize(1);
+  DSC(10, 0);
+  DPTL("HAND");
+
+  DSC(10, 10);
+  DPTL("FIST");
+
+  DSC(10,20);
+  DPTL("ROCK AND ROLL");
+
+  DSC(10,30);
+  DPTL("OK");
+
+  DSC(10,40);
+  DPTL("V");
+
+  DSC(10,50);
+  DPTL("COUNTDOWN");
+
+  if(pos >= 5){
+
+  }
+
+}
+
 void menuControl() {
+
+/*
+  currentMenu = 0 -> Main menu
+  currentMenu = 1 -> Manual handel menu 
+  currentMenu = 2 -> EMG senzor menu
+  currentMenu = 3 -> Gestures menu
+*/
+
+
+  //Main menu
   if(currentMenu == 0){
     if(btnClick == 1){
         switch (pos){
@@ -254,6 +304,7 @@ void menuControl() {
     mainMenu();
   }
 
+  // Manual menu
   else if (currentMenu == 1){
     if(btnClick == 1){
         switch (pos){
@@ -338,6 +389,24 @@ void menuControl() {
     manMenu();
     fingerMov();
   }
+
+  else if(currentMenu == 2){
+     if(btnClick == 1){
+        switch (pos){
+        case 1:
+          currentMenu = 1;
+          break;
+
+        case 2:
+          currentMenu = 2;
+          break;  
+
+        case 3:
+          currentMenu = 3;
+          break;  
+        }
+    }
+  }
  
 }
 
@@ -375,110 +444,3 @@ void loop(){
   delay(100);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-  if(stage == 0){
-    while(!Serial.available());
-    input = Serial.read();
-    if((input == 'Y' || input == 'y') && stage == 0 ){
-      delay(100);
-      stage += 1;
-      input = NULL;
-    }
-  }
-
-  if(stage == 1){
-    PTL("Zadejte kanal prstu, ktery chcete pouzivat: ");
-      while(!Serial.available());
-      userFinger = Serial.read();
-      if(userFinger != NULL){
-        stage++;
-      }
-    delay(100);
-  }
-
-  if(stage == 2){
-    PTL("Zadejte pozici: ");
-    while(!Serial.available());
-    userPos = Serial.read();
-    if(userPos != NULL){
-      stage++;
-      PTL("Pokud chcete pokracovat, tak zadejte Y: ");
-    }    
-    delay(100);
-  }
-
-  if(stage == 3){
-    maestro.setTarget(userFinger, userPos);
-    while(!Serial.available());
-    input = Serial.read();
-    8000
-    if(input == 'Y' || input == 'y' ){
-      stage = 1;
-    }
-    delay(100);
-  }
- */ 
