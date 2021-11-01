@@ -22,7 +22,7 @@ pin D8 to transmit (TX). */
 #define PT(s) Serial.print(s)  //makes life easier
 #define PTL(s) Serial.println(s)
 
-#define DPT(s) diplay.print(s)
+#define DPT(s) display.print(s)
 #define DPTL(s) display.println(s)
 #define DSC(x,y) display.setCursor(x,y)
 
@@ -58,6 +58,18 @@ int currentMenu = 0;
 int servoCon = 0;
 int current_item = -1;
 
+bool volatile encoderState = 0;
+int volatile s1 = 0;
+int volatile s2 = 0;
+
+bool buttonState = 0;             // the current reading from the input pin
+int lastButtonState = LOW;   // the previous reading from the input pin
+
+// the following variables are unsigned longs because the time, measured in
+// milliseconds, will quickly become a bigger number than can be stored in an int.
+unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
+unsigned long debounceDelay = 50;
+
 MicroMaestro maestro(maestroSerial);
 
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
@@ -65,10 +77,19 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
 Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
 
+void encoderFlag(){
+  if(encoderState){
+    return;
+  }else{
+    encoderState = 1;
+    s1 = digitalRead(CLK);
+    s2 = digitalRead(DT);
+  }
+}
 
 void updateEncoder(){
 	// Read the current state of CLK
-	currentStateCLK = digitalRead(CLK);
+	currentStateCLK = s1;
 
 	// If last and current state of CLK are different, then pulse occurred
 	// React to only 1 state change to avoid double count
@@ -76,7 +97,7 @@ void updateEncoder(){
 
 		// If the DT state is different than the CLK state then
 		// the encoder is rotating CCW so decrement
-		if (digitalRead(DT) != currentStateCLK) {
+		if (s2 != currentStateCLK) {
       if(settingServo == 0){
         pos --;
       }
@@ -102,23 +123,56 @@ void updateEncoder(){
   delay(1);
 }
 
+/*
 void btnCheck(){
+  
   int btnState = digitalRead(SW);
   if (btnState == LOW) {
 		//if 50ms have passed since last LOW pulse, it means that the
 		//button has been pressed, released and pressed again
 		if (millis() - lastButtonPress > 50) {
-			//Serial.println("Button pressed!");
-      btnClick = 1;
+      if(btnClick != 1){
+        Serial.println("Button pressed!");
+        btnClick = 1;
+      }else{
+        btnClick = 0;
+      }
 		}
 
 		// Remember last button press event
 		lastButtonPress = millis();
-	}else{
-      btnClick = 0;
-  }
+	}
 }
+*/ 
 
+void btnCheck(){
+   // read the state of the switch into a local variable:
+  int reading = digitalRead(SW);
+  btnClick = 0;
+
+  // If the switch changed, due to noise or pressing:
+  if (reading != lastButtonState) {
+    // reset the debouncing timer
+    lastDebounceTime = millis();
+  }
+
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    // whatever the reading is at, it's been there for longer than the debounce
+    // delay, so take it as the actual current state:
+
+    // if the button state has changed:
+    if (reading != buttonState) {
+      buttonState = reading;
+      if (buttonState == HIGH) {
+        PTL("Button pressed");
+        btnClick = 1;
+      }
+    }
+  }
+  // save the reading. Next time through the loop, it'll be the lastButtonState:
+  lastButtonState = reading;
+
+}
 
 
 
@@ -412,7 +466,6 @@ void menuControl() {
 
 
 
-
 void setup(){
   pinMode(CLK,INPUT);
 	pinMode(DT,INPUT);
@@ -428,19 +481,23 @@ void setup(){
   display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
   display.display();
   display.clearDisplay();
-  
-  attachInterrupt(0, updateEncoder, CHANGE);
-	attachInterrupt(1, updateEncoder, CHANGE);
+
+  // Call updateEncoder() when any high/low changed seen
+	// on interrupt 0 (pin 2), or interrupt 1 (pin 3)
+  attachInterrupt(0, encoderFlag, CHANGE);
+	attachInterrupt(1, encoderFlag, CHANGE);
   ruka.closeFist();
 }
 
 
 void loop(){
+  if(encoderState == 1){
+    updateEncoder();
+    encoderState = 0;
+  }
+  
   btnCheck();
   menuControl();
   display.clearDisplay();
- 
-  
-  delay(100);
 }
 
