@@ -4,6 +4,7 @@
 #include <Adafruit_I2CDevice.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <Encoder.h>
 #include "Arm.hpp"
 
 
@@ -42,8 +43,6 @@ pin D8 to transmit (TX). */
 #define SW 4
 
 int pos = 0;
-int currentStateCLK;
-int lastStateCLK;
 unsigned long lastButtonPress = 0;
 
 const unsigned int SPEED = 0; // 0 is fastest
@@ -58,9 +57,6 @@ int currentMenu = 0;
 int servoCon = 0;
 int current_item = -1;
 
-bool volatile encoderState = 0;
-int volatile s1 = 0;
-int volatile s2 = 0;
 
 bool buttonState = 0;             // the current reading from the input pin
 int lastButtonState = LOW;   // the previous reading from the input pin
@@ -72,60 +68,24 @@ unsigned long debounceDelay = 50;
 
 MicroMaestro maestro(maestroSerial);
 
+Encoder enc(CLK, DT);
+
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
 Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
 
-void encoderFlag(){
-  if(encoderState){
-    return;
-  }else{
-    encoderState = 1;
-    s1 = digitalRead(CLK);
-    s2 = digitalRead(DT);
-  }
-}
+long oldPosition  = -999;
+
 
 void updateEncoder(){
-	// Read the current state of CLK
-	currentStateCLK = s1;
+  long newPosition = enc.read() / 2;
+  if (newPosition != oldPosition) {
+    oldPosition = newPosition;
+    pos = newPosition;
+    
+  }
 
-	// If last and current state of CLK are different, then pulse occurred
-	// React to only 1 state change to avoid double count
-	if (currentStateCLK != lastStateCLK  && currentStateCLK == 1){
-
-		// If the DT state is different than the CLK state then
-		// the encoder is rotating CCW so decrement
-		if (s2 != currentStateCLK) {
-      if(settingServo == 0){
-        pos --;
-      }
-      servoCon -= 200;
-      if( servoCon < CLOSE){
-        servoCon = CLOSE;
-      }
-     
-		} else {
-			// Encoder is rotating CW so increment
-      if(settingServo == 0){
-        pos++;
-      }
-      servoCon+=200;
-      if(servoCon > OPEN){
-         servoCon = OPEN;
-      } 
-		}
-	}
-
-	// Remember last CLK state
-	lastStateCLK = currentStateCLK;
-  delay(1);
-}
-
-/*
-void btnCheck(){
-  
   int btnState = digitalRead(SW);
   if (btnState == LOW) {
 		//if 50ms have passed since last LOW pulse, it means that the
@@ -138,42 +98,10 @@ void btnCheck(){
         btnClick = 0;
       }
 		}
-
 		// Remember last button press event
 		lastButtonPress = millis();
 	}
 }
-*/ 
-
-void btnCheck(){
-   // read the state of the switch into a local variable:
-  int reading = digitalRead(SW);
-  btnClick = 0;
-
-  // If the switch changed, due to noise or pressing:
-  if (reading != lastButtonState) {
-    // reset the debouncing timer
-    lastDebounceTime = millis();
-  }
-
-  if ((millis() - lastDebounceTime) > debounceDelay) {
-    // whatever the reading is at, it's been there for longer than the debounce
-    // delay, so take it as the actual current state:
-
-    // if the button state has changed:
-    if (reading != buttonState) {
-      buttonState = reading;
-      if (buttonState == HIGH) {
-        PTL("Button pressed");
-        btnClick = 1;
-      }
-    }
-  }
-  // save the reading. Next time through the loop, it'll be the lastButtonState:
-  lastButtonState = reading;
-
-}
-
 
 
 void mainMenu(){
@@ -202,7 +130,7 @@ void mainMenu(){
 
 
 void manMenu(){
-
+  PTL("jsem v manmenu");
  // int help = 7;
   display.setTextColor(WHITE);
   display.setTextSize(1);
@@ -254,10 +182,8 @@ void manMenu(){
     }else{
       DSC(2, (pos * 10) + 10);
     }
-    
     DPTL(">");
   }
-
   display.display();
 }
 
@@ -301,7 +227,7 @@ void emgMenu(){
 }
 
 void gestaMenu(){
-   display.setTextColor(WHITE);
+  display.setTextColor(WHITE);
   //---------------------------------
   display.setTextSize(1);
   DSC(10, 0);
@@ -341,8 +267,11 @@ void menuControl() {
   //Main menu
   if(currentMenu == 0){
     if(btnClick == 1){
+        PTL(pos);
+        PTL("jsem v ifu");
         switch (pos){
         case 1:
+          PTL("Jsem v casu");
           currentMenu = 1;
           break;
 
@@ -355,12 +284,14 @@ void menuControl() {
           break;  
         }
     }
-    mainMenu();
+    manMenu();
   }
 
   // Manual menu
   else if (currentMenu == 1){
+    PTL("Jsem v currentmenu 1");
     if(btnClick == 1){
+        
         switch (pos){
         case 0:
           if(settingServo != 1){
@@ -443,61 +374,33 @@ void menuControl() {
     manMenu();
     fingerMov();
   }
-
-  else if(currentMenu == 2){
-     if(btnClick == 1){
-        switch (pos){
-        case 1:
-          currentMenu = 1;
-          break;
-
-        case 2:
-          currentMenu = 2;
-          break;  
-
-        case 3:
-          currentMenu = 3;
-          break;  
-        }
-    }
-  }
  
 }
 
 
 
 void setup(){
-  pinMode(CLK,INPUT);
-	pinMode(DT,INPUT);
   pinMode(SW, INPUT_PULLUP);
 
   // Set the serial baud rate.     
-  Serial.begin(115200);
-  maestroSerial.begin(115200);
-  
-  // Reads the initial state of the outputA
-  lastStateCLK = digitalRead(CLK); 
+  Serial.begin(9600);
+  maestroSerial.begin(9600);
+
 
   display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
   display.display();
   display.clearDisplay();
-
-  // Call updateEncoder() when any high/low changed seen
-	// on interrupt 0 (pin 2), or interrupt 1 (pin 3)
-  attachInterrupt(0, encoderFlag, CHANGE);
-	attachInterrupt(1, encoderFlag, CHANGE);
+  
   ruka.closeFist();
 }
 
-
 void loop(){
-  if(encoderState == 1){
-    updateEncoder();
-    encoderState = 0;
-  }
-  
-  btnCheck();
+
+  updateEncoder();
   menuControl();
+  display.display();
   display.clearDisplay();
+  
 }
+
 
