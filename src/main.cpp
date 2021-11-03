@@ -58,7 +58,7 @@ int servoCon = 0;
 int current_item = -1;
 
 
-bool buttonState = 0;             // the current reading from the input pin
+bool buttonState = 0;        // the current reading from the input pin
 int lastButtonState = LOW;   // the previous reading from the input pin
 
 // the following variables are unsigned longs because the time, measured in
@@ -68,12 +68,12 @@ unsigned long debounceDelay = 50;
 
 MicroMaestro maestro(maestroSerial);
 
-Encoder enc(CLK, DT);
-
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
 Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
+
+Encoder enc(CLK, DT);
 
 long oldPosition  = -999;
 
@@ -106,7 +106,6 @@ void updateEncoder(){
 
 void mainMenu(){
     display.setTextSize(2);
-    display.setTextColor(WHITE);
 
     DSC(10, 0);
     DPTL("EMG ARM");
@@ -132,8 +131,8 @@ void mainMenu(){
 void manMenu(){
   PTL("jsem v manmenu");
  // int help = 7;
-  display.setTextColor(WHITE);
-  display.setTextSize(1);
+
+  display.clearDisplay();
 
   if(pos >= 5 ){
 
@@ -189,6 +188,7 @@ void manMenu(){
 
 
 void fingerMov(){
+  display.clearDisplay();
   if(settingServo == 1){
     switch(current_item){
       case 0:
@@ -215,21 +215,12 @@ void fingerMov(){
       ruka.moveFinger(WRIST,servoCon);
       break;
     }
-    
+    display.display();
   }
 }
 
-void emgMenu(){
-  display.setTextColor(WHITE);
-  //---------------------------------
-  display.setTextSize(1);
-
-}
-
 void gestaMenu(){
-  display.setTextColor(WHITE);
-  //---------------------------------
-  display.setTextSize(1);
+  display.clearDisplay();
   DSC(10, 0);
   DPTL("HAND");
 
@@ -251,6 +242,7 @@ void gestaMenu(){
   if(pos >= 5){
 
   }
+  display.display();
 
 }
 
@@ -383,24 +375,69 @@ void setup(){
   pinMode(SW, INPUT_PULLUP);
 
   // Set the serial baud rate.     
-  Serial.begin(9600);
+  Serial.begin(115200);
   maestroSerial.begin(9600);
 
-
-  display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
-  display.display();
+  if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) { 
+  Serial.println("SSD1306 allocation failed");
+  for(;;); // Don't proceed, loop forever
+  }
+  delay(2000);
   display.clearDisplay();
-  
+  display.setTextColor(WHITE);
+  display.setTextSize(1);
+
   ruka.closeFist();
 }
 
 void loop(){
 
-  updateEncoder();
-  menuControl();
-  display.display();
-  display.clearDisplay();
-  
+  //updateEncoder();
+  //menuControl();
+  //manMenu();
+ 
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
