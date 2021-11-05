@@ -20,12 +20,12 @@ pin D8 to transmit (TX). */
   SoftwareSerial maestroSerial(9, 8);
 #endif
 
-//#define PT(s) Serial.print(s)  //makes life easier
-//#define PTL(s) Serial.println(s)
+#define PT(s) Serial.print(s)  //makes life easier
+#define PTL(s) Serial.println(s)
 
-//#define DPT(s) display.print(s)
-//#define DPTL(s) display.println(s)
-//#define DSC(x,y) display.setCursor(x,y)
+#define DPT(s) display.print(s)
+#define DPTL(s) display.println(s)
+#define DSC(x,y) display.setCursor(x,y)
 
 #define WRIST 0
 #define THUMB 1
@@ -51,13 +51,13 @@ const unsigned int ACCELERATION = 0;
 const int OPEN = 8000;
 const int CLOSE = 3968;
 
-bool btnClick = 0;
-bool settingServo = 0;
-int currentMenu = 1;
+
+bool settingServo = 1;
+int currentMenu = 0;
 int servoCon = 0;
 int current_item = -1;
 
-
+bool btnClick = 0;
 bool buttonState = 0;        // the current reading from the input pin
 int lastButtonState = LOW;   // the previous reading from the input pin
 
@@ -73,55 +73,71 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
 Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
 
-//Encoder enc(CLK, DT);
+Encoder enc(CLK, DT);
 
 long oldPosition  = -999;
 
-/*
+
 void updateEncoder(){
   long newPosition = enc.read() / 2;
   if (newPosition != oldPosition) {
     oldPosition = newPosition;
-    pos = newPosition;
+    if(!settingServo){
+      pos = newPosition;
+    }else{
+      servoCon = newPosition+200;
+    }
+    
   }
-}
-*/
-void btnCheck(){
-  int btnState = digitalRead(SW);
-  btnClick = 0;
-  if (btnState == LOW) {
-		//if 50ms have passed since last LOW pulse, it means that the
-		//button has been pressed, released and pressed again
-		if (millis() - lastButtonPress > 50) {
-        Serial.println("Button pressed!");
-        btnClick = 1;
-		}
-		// Remember last button press event
-		lastButtonPress = millis();
-	}
+
 }
 
+void btnCheck(){
+  int reading = digitalRead(SW);
+  btnClick = 0;
+  // If the switch changed, due to noise or pressing:
+  if (reading != lastButtonState) {
+    // reset the debouncing timer
+    lastDebounceTime = millis();
+  }
+
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    // whatever the reading is at, it's been there for longer than the debounce
+    // delay, so take it as the actual current state:
+
+    // if the button state has changed:
+    if (reading != buttonState) {
+      buttonState = reading;
+      if (buttonState == HIGH) {
+        PTL("Button pressed");
+        btnClick = 1;
+      }
+    }
+  }
+  // save the reading. Next time through the loop, it'll be the lastButtonState:
+  lastButtonState = reading;
+}
 
 void mainMenu(){
     display.clearDisplay();
     display.setTextSize(2);
-    display.setTextColor(WHITE);
 
-    display.setCursor(10, 0);
-    display.println("EMG ARM");
+    DSC(10, 0);
+    DPTL("EMG ARM");
     //---------------------------------
     display.setTextSize(1);
-    display.setCursor(10, 20);
-    display.println("Manual");
 
-    display.setCursor(10, 30);
-    display.println("EMG");
+    DSC(10, 20);
+    DPTL("Manual");
 
-    display.setCursor(10, 40);
-    display.println("Gesta");
+    DSC(10, 30);
+    DPTL("EMG");
+
+    DSC(10, 40);
+    DPTL("Gesta");
     
-    display.setCursor(2, (pos * 10) + 10);
-    display.println(">");
+    DSC(2, (pos * 10) + 10);
+    DPTL(">");
     display.display();
   
 }
@@ -129,53 +145,52 @@ void mainMenu(){
 
 void manMenu(){
   display.clearDisplay();
-  display.setTextColor(WHITE);
-  display.setTextSize(1);
-  
+
   if(pos >= 5 ){
-    display.setCursor(10, 0);
-    display.println("WRIST");
-    display.setCursor(60, 0);
-    display.print(ruka.getWristPos());
 
-    display.setCursor(10,10);
-    display.println("GO BACK"); 
+    DSC(10, 10);
+    DPTL("WRIST");
+    DSC(60, 10);
+    DPT(ruka.getWristPos());
 
-    display.setCursor(2, ((pos - 6) * 10) + 10);
-    display.println(">");
-  } else{
-    display.setCursor(10, 10);
-    display.println("THUMB");
-    display.setCursor(60,10);
-    //display.print(maestro.getPosition(WRIST));
-    
+    DSC(10,20);
+    DPTL("GO BACK"); 
 
-    display.setCursor(10, 20);
-    display.println("INDEX");
-    display.setCursor(60,20);
-   // display.print(ruka.getIndexPos());
-
-    display.setCursor(10, 30);
-    display.println("MIDDLE");
-    display.setCursor(60, 30);
-    //display.print(ruka.getMiddlePos());
-
-    display.setCursor(10, 40);
-    display.println("RING");
-    display.setCursor(60, 40);
-    //display.print(ruka.getRingPos());
-
-    display.setCursor(10, 50);
-    display.println("PINKY");
-    display.setCursor(60, 50);
-    //display.print(ruka.getPinkyPos());
-
-    display.setCursor(2, (pos * 10) + 10);
-    display.println(">");
-    display.display();
+    DSC(2, ((pos - 5) * 10) + 10);
+    DPTL(">");
   }
 
-  
+  else{
+    DSC(10, 10);
+    DPTL("THUMB");
+    DSC(60,10);
+    DPT(ruka.getThumbPos());
+    
+
+    DSC(10, 20);
+    DPTL("INDEX");
+    DSC(60,20);
+    DPT(ruka.getIndexPos());
+
+    DSC(10, 30);
+    DPTL("MIDDLE");
+    DSC(60, 30);
+    DPT(ruka.getMiddlePos());
+
+    DSC(10, 40);
+    DPTL("RING");
+    DSC(60, 40);
+    DPT(ruka.getRingPos());
+
+    DSC(10, 50);
+    DPTL("PINKY");
+    DSC(60, 50);
+    DPT(ruka.getPinkyPos());
+
+    DSC(2, (pos * 10) + 10);
+    DPTL(">");
+  }
+  display.display();
 }
 
 
@@ -206,11 +221,48 @@ void fingerMov(){
       ruka.moveFinger(WRIST,servoCon);
       break;
     }
-    
   }
 }
 
+
+void gestaMenu(){
+  display.clearDisplay();
+  DSC(10, 0);
+  DPTL("HAND");
+
+  DSC(10, 10);
+  DPTL("FIST");
+
+  DSC(10,20);
+  DPTL("ROCK AND ROLL");
+
+  DSC(10,30);
+  DPTL("OK");
+
+  DSC(10,40);
+  DPTL("V");
+
+  DSC(10,50);
+  DPTL("COUNTDOWN");
+
+  if(pos >= 5){
+
+  }
+  display.display();
+
+}
+
 void menuControl() {
+
+/*
+  currentMenu = 0 -> Main menu
+  currentMenu = 1 -> Manual handel menu 
+  currentMenu = 2 -> EMG senzor menu
+  currentMenu = 3 -> Gestures menu
+*/
+
+
+  //Main menu
   if(currentMenu == 0){
     if(btnClick == 1){
         switch (pos){
@@ -225,12 +277,13 @@ void menuControl() {
         case 3:
           currentMenu = 3;
           break;  
-        }
+        } 
     }
     mainMenu();
   }
 
-  if (currentMenu == 1){
+  // Manual menu
+  else if (currentMenu == 1){
     if(btnClick == 1){
         switch (pos){
         case 0:
@@ -311,16 +364,11 @@ void menuControl() {
           
         }
     }
-    Serial.println("jsem tady");
     manMenu();
     fingerMov();
   }
  
 }
-
-
-
-
 
 void setup(){
   pinMode(SW, INPUT_PULLUP);
@@ -329,62 +377,21 @@ void setup(){
   Serial.begin(9600);
   maestroSerial.begin(9600);
 
-  display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
+  if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) { 
+  Serial.println("SSD1306 allocation failed");
+  for(;;); // Don't proceed, loop forever
+  }
   display.clearDisplay();
-  display.display();
+  display.setTextColor(WHITE);
+  display.setTextSize(1);
+
+  ruka.closeFist();
 }
 
 void loop(){
-  
-  //btnCheck();
-  //updateEncoder();
-  //menuControl();
-  Serial.println("jedu");
-  Serial.println(maestro.getPosition(WRIST));
-  Serial.println("jedu");
-  delay(100);
-
+  btnCheck();
+  updateEncoder();
+  menuControl();
+  delay(10);
+  Serial.print(servoCon);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
