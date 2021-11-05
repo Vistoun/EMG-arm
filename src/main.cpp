@@ -42,7 +42,7 @@ pin D8 to transmit (TX). */
 #define DT 3
 #define SW 4
 
-int pos = 0;
+int pos = 1;
 unsigned long lastButtonPress = 0;
 
 const unsigned int SPEED = 0; // 0 is fastest
@@ -51,8 +51,7 @@ const unsigned int ACCELERATION = 0;
 const int OPEN = 8000;
 const int CLOSE = 3968;
 
-
-bool settingServo = 1;
+bool settingServo = 0;
 int currentMenu = 0;
 int servoCon = 0;
 int current_item = -1;
@@ -80,17 +79,19 @@ long oldPosition  = -999;
 
 void updateEncoder(){
   long newPosition = enc.read() / 2;
+
   if (newPosition != oldPosition) {
-    oldPosition = newPosition;
-    if(!settingServo){
-      pos = newPosition;
+    if(oldPosition < newPosition){
+      servoCon >= OPEN ? servoCon = OPEN : servoCon += 200;
     }else{
-      servoCon = newPosition+200;
+      servoCon <= CLOSE ? servoCon = CLOSE : servoCon -= 200;
     }
-    
-  }
+
+    if(!settingServo){ oldPosition = newPosition; pos = newPosition; } 
+  } 
 
 }
+
 
 void btnCheck(){
   int reading = digitalRead(SW);
@@ -114,7 +115,6 @@ void btnCheck(){
       }
     }
   }
-  // save the reading. Next time through the loop, it'll be the lastButtonState:
   lastButtonState = reading;
 }
 
@@ -383,7 +383,6 @@ void setup(){
   }
   display.clearDisplay();
   display.setTextColor(WHITE);
-  display.setTextSize(1);
 
   ruka.closeFist();
 }
@@ -393,5 +392,4 @@ void loop(){
   updateEncoder();
   menuControl();
   delay(10);
-  Serial.print(servoCon);
 }
