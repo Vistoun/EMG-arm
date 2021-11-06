@@ -43,7 +43,7 @@ pin D8 to transmit (TX). */
 #define SW 4
 
 int pos = 1;
-unsigned long lastButtonPress = 0;
+
 
 const unsigned int SPEED = 0; // 0 is fastest
 const unsigned int ACCELERATION = 0;
@@ -55,15 +55,11 @@ bool settingServo = 0;
 int currentMenu = 0;
 int servoCon = 0;
 int current_item = -1;
+int maxMenuItems = 5; 
+int minMenuItems = 1;
 
 bool btnClick = 0;
-bool buttonState = 0;        // the current reading from the input pin
-int lastButtonState = LOW;   // the previous reading from the input pin
-
-// the following variables are unsigned longs because the time, measured in
-// milliseconds, will quickly become a bigger number than can be stored in an int.
-unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
-unsigned long debounceDelay = 50;
+uint8_t btnPrev;
 
 MicroMaestro maestro(maestroSerial);
 
@@ -87,35 +83,24 @@ void updateEncoder(){
       servoCon <= CLOSE ? servoCon = CLOSE : servoCon -= 200;
     }
 
-    if(!settingServo){ oldPosition = newPosition; pos = newPosition; } 
+    if(!settingServo){ 
+      oldPosition = newPosition;
+      newPosition >= maxMenuItems ? newPosition = maxMenuItems : pos = newPosition;
+      newPosition <= minMenuItems ? newPosition = minMenuItems : pos = newPosition;
+    } 
   } 
 
 }
 
 
 void btnCheck(){
-  int reading = digitalRead(SW);
-  btnClick = 0;
-  // If the switch changed, due to noise or pressing:
-  if (reading != lastButtonState) {
-    // reset the debouncing timer
-    lastDebounceTime = millis();
+  uint8_t btnCurr = digitalRead(SW);
+
+  if (btnCurr == LOW && btnPrev == HIGH){
+    btnClick = 1;
   }
 
-  if ((millis() - lastDebounceTime) > debounceDelay) {
-    // whatever the reading is at, it's been there for longer than the debounce
-    // delay, so take it as the actual current state:
-
-    // if the button state has changed:
-    if (reading != buttonState) {
-      buttonState = reading;
-      if (buttonState == HIGH) {
-        PTL("Button pressed");
-        btnClick = 1;
-      }
-    }
-  }
-  lastButtonState = reading;
+  btnPrev = digitalRead(SW);
 }
 
 void mainMenu(){
@@ -367,7 +352,6 @@ void menuControl() {
     manMenu();
     fingerMov();
   }
- 
 }
 
 void setup(){
@@ -376,6 +360,7 @@ void setup(){
   // Set the serial baud rate.     
   Serial.begin(9600);
   maestroSerial.begin(9600);
+  btnPrev = digitalRead(SW);
 
   if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) { 
   Serial.println("SSD1306 allocation failed");
@@ -388,8 +373,12 @@ void setup(){
 }
 
 void loop(){
-  btnCheck();
+
   updateEncoder();
+  btnCheck();
   menuControl();
+
+  PTL(pos);
+  
   delay(10);
 }
