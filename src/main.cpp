@@ -42,9 +42,6 @@ pin D8 to transmit (TX). */
 #define DT 3
 #define SW 4
 
-int pos = 1;
-
-
 const unsigned int SPEED = 0; // 0 is fastest
 const unsigned int ACCELERATION = 0;
 
@@ -71,22 +68,29 @@ Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
 Encoder enc(CLK, DT);
 
 long oldPosition  = -999;
+int pos = 1;
 
 
 void updateEncoder(){
-  long newPosition = enc.read() / 2;
-
-  if (newPosition != oldPosition) {
-    if(oldPosition < newPosition){
+    pos = enc.read() / 2;
+    if(pos >= maxMenuItems){
+       enc.write(maxMenuItems);
+    }
+    else if(pos <= minMenuItems){
+      pos = minMenuItems;
+      enc.write(minMenuItems);
+    }
+    
+  
+  if (pos != oldPosition) {
+    if(oldPosition < pos){
       servoCon >= OPEN ? servoCon = OPEN : servoCon += 200;
     }else{
       servoCon <= CLOSE ? servoCon = CLOSE : servoCon -= 200;
     }
 
     if(!settingServo){ 
-      oldPosition = newPosition;
-      newPosition >= maxMenuItems ? newPosition = maxMenuItems : pos = newPosition;
-      newPosition <= minMenuItems ? newPosition = minMenuItems : pos = newPosition;
+      oldPosition = pos;
     } 
   } 
 
