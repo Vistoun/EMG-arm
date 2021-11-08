@@ -7,7 +7,6 @@
 #include <Encoder.h>
 #include "Arm.hpp"
 
-
 /* On boards with a hardware serial port available for use, use
 that port to communicate with the Maestro. For other boards,
 create a SoftwareSerial object using pin D9 to receive (RX) and
@@ -68,39 +67,42 @@ Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
 Encoder enc(CLK, DT);
 
 long oldPosition  = -999;
-int pos = 1;
+//int pos = 1;
 
+int cursorPos = 1;
+int servoPos = 0;
 
-void updateEncoder(){
-    pos = enc.read() / 2;
-    if(pos >= maxMenuItems){
-       enc.write(maxMenuItems);
-    }
-    else if(pos <= minMenuItems){
-      pos = minMenuItems;
-      enc.write(minMenuItems);
-    }
-    
-  
-  if (pos != oldPosition) {
-    if(oldPosition < pos){
-      servoCon >= OPEN ? servoCon = OPEN : servoCon += 200;
-    }else{
-      servoCon <= CLOSE ? servoCon = CLOSE : servoCon -= 200;
-    }
-
-    if(!settingServo){ 
-      oldPosition = pos;
-    } 
-  } 
-
+void updateCursorPos(){
+  cursorPos = enc.read() / 2;
+  if(cursorPos >= maxMenuItems){
+    cursorPos = maxMenuItems;
+    enc.write(maxMenuItems*2);
+  }
+  else if(cursorPos <= minMenuItems){
+    cursorPos = minMenuItems;
+    enc.write(minMenuItems*2);
+  }
 }
 
+void updateServoPos(){
+  servoPos = enc.read() / 2;
+  if (servoPos != oldPosition) { 
+    oldPosition = servoPos;
+    if(oldPosition < servoPos ){
+      servoCon >= OPEN ? servoCon = OPEN : servoCon += 200;
+    } else{
+      servoCon <= CLOSE ? servoCon = CLOSE : servoCon -= 200;
+    }
+  }
+}
 
+  
 void btnCheck(){
   uint8_t btnCurr = digitalRead(SW);
+  btnClick = 0;
 
   if (btnCurr == LOW && btnPrev == HIGH){
+    PTL("btn pressed");
     btnClick = 1;
   }
 
@@ -125,7 +127,7 @@ void mainMenu(){
     DSC(10, 40);
     DPTL("Gesta");
     
-    DSC(2, (pos * 10) + 10);
+    DSC(2, (cursorPos * 10) + 10);
     DPTL(">");
     display.display();
   
@@ -135,7 +137,7 @@ void mainMenu(){
 void manMenu(){
   display.clearDisplay();
 
-  if(pos >= 5 ){
+  if(cursorPos >= 5 ){
 
     DSC(10, 10);
     DPTL("WRIST");
@@ -145,7 +147,7 @@ void manMenu(){
     DSC(10,20);
     DPTL("GO BACK"); 
 
-    DSC(2, ((pos - 5) * 10) + 10);
+    DSC(2, ((cursorPos - 5) * 10) + 10);
     DPTL(">");
   }
 
@@ -176,7 +178,7 @@ void manMenu(){
     DSC(60, 50);
     DPT(ruka.getPinkyPos());
 
-    DSC(2, (pos * 10) + 10);
+    DSC(2, (cursorPos * 10) + 10);
     DPTL(">");
   }
   display.display();
@@ -234,7 +236,7 @@ void gestaMenu(){
   DSC(10,50);
   DPTL("COUNTDOWN");
 
-  if(pos >= 5){
+  if(cursorPos >= 5){
 
   }
   display.display();
@@ -253,8 +255,10 @@ void menuControl() {
 
   //Main menu
   if(currentMenu == 0){
+    maxMenuItems = 3;
+    minMenuItems = 1;
     if(btnClick == 1){
-        switch (pos){
+        switch (cursorPos){
         case 1:
           currentMenu = 1;
           break;
@@ -273,8 +277,10 @@ void menuControl() {
 
   // Manual menu
   else if (currentMenu == 1){
+    maxMenuItems = 6;
+    minMenuItems = 0;
     if(btnClick == 1){
-        switch (pos){
+        switch (cursorPos){
         case 0:
           if(settingServo != 1){
             settingServo = 1;
@@ -377,12 +383,17 @@ void setup(){
 }
 
 void loop(){
-
-  updateEncoder();
+  if(settingServo == 0){
+    updateCursorPos();
+  }
+  else if(settingServo == 1){
+    updateServoPos();
+  }
+    
   btnCheck();
   menuControl();
 
-  PTL(pos);
-  
-  delay(10);
+  //PTL(pos);
+  PTL( settingServo);
+  delay(100);
 }
