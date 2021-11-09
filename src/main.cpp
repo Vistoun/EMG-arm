@@ -66,7 +66,7 @@ Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
 
 Encoder enc(CLK, DT);
 
-long oldPosition  = -999;
+long oldPosition  = 999;
 //int pos = 1;
 
 int cursorPos = 1;
@@ -87,12 +87,12 @@ void updateCursorPos(){
 void updateServoPos(){
   servoPos = enc.read() / 2;
   if (servoPos != oldPosition) { 
-    oldPosition = servoPos;
     if(oldPosition < servoPos ){
       servoCon >= OPEN ? servoCon = OPEN : servoCon += 200;
-    } else{
+    } else if (oldPosition > servoPos){
       servoCon <= CLOSE ? servoCon = CLOSE : servoCon -= 200;
     }
+    oldPosition = servoPos;
   }
 }
 
@@ -280,98 +280,62 @@ void menuControl() {
     maxMenuItems = 6;
     minMenuItems = 0;
     if(btnClick == 1){
-        switch (cursorPos){
+      settingServo != 1 ? settingServo = 1 : settingServo = 0;
+      servoCon = 0;
+      switch (cursorPos){
         case 0:
-          if(settingServo != 1){
-            settingServo = 1;
-            servoCon = 0;
             current_item = 0;
-            servoCon += ruka.getThumbPos();
-            
-          }else{
-            settingServo = 0;
-          }
+            servoCon += ruka.getThumbPos();            
           break;
 
-        case 1:
-          if(settingServo != 1){
-            settingServo = 1;
-            servoCon = 0;
+        case 1:        
             current_item = 1;
-            servoCon += ruka.getIndexPos();
-            
-          }else{
-            settingServo = 0;
-          }
+            servoCon += ruka.getIndexPos();                     
           break;  
 
-        case 2:
-          if(settingServo != 1){
-            settingServo = 1;
-            servoCon = 0;
+        case 2:                   
             current_item = 2;
-            servoCon += ruka.getMiddlePos();
-            
-          }else{
-            settingServo = 0;
-          }
+            servoCon += ruka.getMiddlePos();                   
           break;  
         
-        case 3:
-          if(settingServo != 1){
-            settingServo = 1;
-            servoCon = 0;
+        case 3:                 
             current_item = 3;
-            servoCon += ruka.getRingPos();
-            
-          }else{
-            settingServo = 0;
-          }
+            servoCon += ruka.getRingPos();                    
           break;  
         
-        case 4:
-            if(settingServo != 1){
-            settingServo = 1;
-            servoCon = 0;
+        case 4:                       
             current_item = 4;
-            servoCon += ruka.getPinkyPos();
-            
-          }else{
-            settingServo = 0;
-          }
+            servoCon += ruka.getPinkyPos();                    
           break;  
         
-        case 5:
-          if(settingServo != 1){
-            settingServo = 1;
-            servoCon = 0;
+        case 5:       
             current_item = 5;
-            servoCon += ruka.getWristPos();
-            
-          }else{
-            settingServo = 0;
-          }
+            servoCon += ruka.getWristPos();  
           break;  
         
         case 6:
           currentMenu = 0;
+          settingServo = 0;
           break;  
           
         }
+        enc.write(current_item*2);
     }
+    
     manMenu();
     fingerMov();
   }
+  
 }
 
 void setup(){
   pinMode(SW, INPUT_PULLUP);
+  btnPrev = digitalRead(SW);
 
   // Set the serial baud rate.     
   Serial.begin(9600);
   maestroSerial.begin(9600);
-  btnPrev = digitalRead(SW);
-
+  
   if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) { 
   Serial.println("SSD1306 allocation failed");
   for(;;); // Don't proceed, loop forever
@@ -379,7 +343,7 @@ void setup(){
   display.clearDisplay();
   display.setTextColor(WHITE);
 
-  ruka.closeFist();
+  ruka.openFist();
 }
 
 void loop(){
