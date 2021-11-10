@@ -3,7 +3,14 @@
 
 ## Cíl
   **Zkonstuovaní robotické ruky ovládané pomocí EMG (svalových) senzorů.**
-  
+
+## Hardware 
+- InMoov robotic arm 
+- MyoWare Muscle Sensor
+- Arduino NANO
+- I2C OLED display 128x64
+- Rotační enkodér
+
 ### What to do: 
 - Složení ruky
 - Naprogramování pohybů 
@@ -26,10 +33,10 @@
 
 ### Říjen 
 - ~~Programování ruky~~
-- Programování senzorů 
-- Programování ovládaní pomoci displeje a enkodéru
+- ~~Programování ovládaní pomoci displeje a enkodéru~~ 
 
 ### Listopad 
+- Programování senzorů 
 - Dokončování pogramovaní 
 - Optimalizace 
 - Přidělání a modelování hardwareové části ruky 
