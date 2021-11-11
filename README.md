@@ -10,6 +10,7 @@
 - Arduino NANO
 - I2C OLED display 128x64
 - Rotační enkodér
+- 6xMG995R Servo 
 
 ### What to do: 
 - Složení ruky
