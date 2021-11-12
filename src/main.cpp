@@ -50,7 +50,7 @@ const int CLOSE = 3968;
 bool settingServo = 0;
 int currentMenu = 0;
 int servoCon = 0;
-int current_item = -1;
+int currentFinger = -1;
 int maxMenuItems = 5; 
 int minMenuItems = 1;
 
@@ -67,10 +67,10 @@ Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
 Encoder enc(CLK, DT);
 
 long oldPosition  = 999;
-//int pos = 1;
 
 int cursorPos = 1;
 int servoPos = 0;
+int value = 0;
 
 void updateCursorPos(){
   cursorPos = enc.read() / 2;
@@ -123,9 +123,12 @@ void mainMenu(){
 
     DSC(10, 30);
     DPTL("EMG");
+    DSC(60, 30);
+    DPT(value);
 
     DSC(10, 40);
     DPTL("Gesta");
+    
     
     DSC(2, (cursorPos * 10) + 10);
     DPTL(">");
@@ -187,7 +190,7 @@ void manMenu(){
 
 void fingerMov(){
   if(settingServo == 1){
-    switch(current_item){
+    switch(currentFinger){
       case 0:
       ruka.moveFinger(THUMB, servoCon);
       break;
@@ -284,32 +287,32 @@ void menuControl() {
       servoCon = 0;
       switch (cursorPos){
         case 0:
-            current_item = 0;
+            currentFinger = 0;
             servoCon += ruka.getThumbPos();            
           break;
 
         case 1:        
-            current_item = 1;
+            currentFinger = 1;
             servoCon += ruka.getIndexPos();                     
           break;  
 
         case 2:                   
-            current_item = 2;
+            currentFinger = 2;
             servoCon += ruka.getMiddlePos();                   
           break;  
         
         case 3:                 
-            current_item = 3;
+            currentFinger = 3;
             servoCon += ruka.getRingPos();                    
           break;  
         
         case 4:                       
-            current_item = 4;
+            currentFinger = 4;
             servoCon += ruka.getPinkyPos();                    
           break;  
         
         case 5:       
-            current_item = 5;
+            currentFinger = 5;
             servoCon += ruka.getWristPos();  
           break;  
         
@@ -319,7 +322,7 @@ void menuControl() {
           break;  
           
         }
-        enc.write(current_item*2);
+        enc.write(currentFinger*2);
     }
     
     manMenu();
@@ -347,6 +350,8 @@ void setup(){
 }
 
 void loop(){
+
+  value = analogRead(A0);
   if(settingServo == 0){
     updateCursorPos();
   }
