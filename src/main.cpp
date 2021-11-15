@@ -51,11 +51,6 @@ DPTL(">")
 #define OPEN 8000
 #define CLOSE 3968
 
-// '9f1a276ee240820d18e3e8771bc29d97', 45x50px
-// '9f1a276ee240820d18e3e8771bc29d97', 30x30px
-
-
-
 bool settingServo = 0;
 int currentMenu = 0;
 int servoCon = 0;
@@ -80,6 +75,7 @@ Encoder enc(CLK, DT);
 
 void updateCursorPos(){
   cursorPos = enc.read() / 2;
+
   if(cursorPos >= maxMenuItems){
     cursorPos = maxMenuItems;
     enc.write(maxMenuItems*2);
@@ -88,6 +84,7 @@ void updateCursorPos(){
     cursorPos = minMenuItems;
     enc.write(minMenuItems*2);
   }
+  
 }
 
 void updateServoPos(){
@@ -215,18 +212,27 @@ void manualScreen(){
 }
 
 void gesturesScreen(){
-  display.setTextSize(2);
+  int pom = 0;
   display.clearDisplay();
-
-    display.drawBitmap(10, 0, hand, 30, 30, WHITE);
-    
+  display.setTextSize(2);
+  cursorPos == 0 ? pom = 0 : pom = 20;
+  if( cursorPos < 2){
+    display.drawBitmap(10, 0, hand, 30, 30, WHITE);  
     display.drawBitmap(10, 35, fist, 30, 30, WHITE);
+
     
+    DSC(2, ((cursorPos) * 10) + pom + 10); 
+    DPTL(">");
 
-   DSC(2, ((cursorPos) * 10)); 
-   DPTL(">");
- 
+  }
+  else if( cursorPos >= 2){
+    display.drawBitmap(10, 35, fist, 30, 30, WHITE);
+    display.drawBitmap(10, 0, hand, 30, 30, WHITE);  
 
+    DSC(2, ((cursorPos) * 10) + pom + 10); 
+    DPTL(">");
+  }
+  
   display.display();
 
 }
@@ -369,6 +375,7 @@ void setup(){
 }
 
 void loop(){
+  
   if(settingServo == 0){
     updateCursorPos();
   }
@@ -378,5 +385,7 @@ void loop(){
     
   btnCheck();
   menuControl();
+
+  delay(100);
   
 }
