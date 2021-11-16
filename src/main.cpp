@@ -55,7 +55,7 @@ bool settingServo = 0;
 int currentMenu = 0;
 int servoCon = 0;
 int currentFinger = -1;
-int maxMenuItems = 5; 
+int maxMenuItems = 3; 
 int minMenuItems = 1;
 bool btnClick = 0;
 long oldPosition  = -999;
@@ -63,6 +63,7 @@ int cursorPos = 1;
 int servoPos = 0;
 int value = 0;
 uint8_t btnPrev;
+bool resetCursor = 0;
 
 MicroMaestro maestro(maestroSerial);
 
@@ -75,7 +76,10 @@ Encoder enc(CLK, DT);
 
 void updateCursorPos(){
   cursorPos = enc.read() / 2;
-
+  PT("cursor ");
+  PT(maxMenuItems);
+  PT(" ");
+  PTL(minMenuItems);
   if(cursorPos >= maxMenuItems){
     cursorPos = maxMenuItems;
     enc.write(maxMenuItems*2);
@@ -83,6 +87,13 @@ void updateCursorPos(){
   else if(cursorPos <= minMenuItems){
     cursorPos = minMenuItems;
     enc.write(minMenuItems*2);
+  }
+
+  if(resetCursor){
+    PTL("jsem tu");
+    cursorPos = 0;
+    enc.write(0);
+    resetCursor = 0;
   }
   
 }
@@ -238,6 +249,7 @@ void gesturesScreen(){
 }
 
 void menuControl() {
+  PTL("menu");
 
 /*
   currentMenu = 0 -> Main menu
@@ -249,24 +261,28 @@ void menuControl() {
 
   //Main menu
   if(currentMenu == 0){
+  //  PTL("jsem stale currentmenu 0");
     maxMenuItems = 3;
     minMenuItems = 1;
     if(btnClick == 1){
         switch (cursorPos){
         case 1:
+          resetCursor = 1;
           currentMenu = 1;
+          
           break;
 
         case 2:
+          resetCursor = 1;
           currentMenu = 2;
           break;  
 
         case 3:
+          resetCursor = 1;
           currentMenu = 3;
           break;  
-        } 
+        }
     }
-    startScreen();
   }
 
   // Manual menu
@@ -308,15 +324,16 @@ void menuControl() {
           break;  
         
         case 6:
+          enc.write(1);
+          cursorPos = 1;
           currentMenu = 0;
           settingServo = 0;
+          
           break;  
           
         }
       enc.write(currentFinger*2);
     }
-    manualScreen();
-    fingerMov();
   }
 
   // EMG screen
@@ -349,7 +366,6 @@ void menuControl() {
           
       }
     }
-    gesturesScreen();
   }
   
 }
@@ -376,15 +392,27 @@ void setup(){
 
 void loop(){
   
-  if(settingServo == 0){
-    updateCursorPos();
-  }
-  else if(settingServo == 1){
-    updateServoPos();
-  }
-    
+  settingServo  == 1 ? updateServoPos() : updateCursorPos();
   btnCheck();
+  switch (currentMenu) {
+    case 0:
+      startScreen();
+      break;
+    case 1:
+      manualScreen();
+      fingerMov(); 
+      break;
+    case 2:
+      break;
+    case 3:
+      gesturesScreen();
+      break;     
+  }  
+    
   menuControl();
+
+
+
 
   delay(100);
   
