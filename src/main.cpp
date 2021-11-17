@@ -64,6 +64,8 @@ int servoPos = 0;
 int value = 0;
 uint8_t btnPrev;
 bool resetCursor = 0;
+int page = 0;
+int menuItems = 0;
 
 MicroMaestro maestro(maestroSerial);
 
@@ -74,12 +76,13 @@ Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
 
 Encoder enc(CLK, DT);
 
+void cursorReset(){
+    cursorPos = 0;
+    enc.write(0);
+}
+
 void updateCursorPos(){
   cursorPos = enc.read() / 2;
-  PT("cursor ");
-  PT(maxMenuItems);
-  PT(" ");
-  PTL(minMenuItems);
   if(cursorPos >= maxMenuItems){
     cursorPos = maxMenuItems;
     enc.write(maxMenuItems*2);
@@ -90,13 +93,12 @@ void updateCursorPos(){
   }
 
   if(resetCursor){
-    PTL("jsem tu");
-    cursorPos = 0;
-    enc.write(0);
+    cursorReset();
     resetCursor = 0;
   }
   
 }
+
 
 void updateServoPos(){
   servoPos = enc.read() / 2;
@@ -222,34 +224,47 @@ void manualScreen(){
   display.display();
 }
 
+
+
 void gesturesScreen(){
   int pom = 0;
+  int treshold = 0;
+
+  if(cursorPos >= menuItems ){
+    page++;
+    menuItems += 2;
+  }
+  else if (cursorPos < menuItems-2 && page >= 1){
+    page--;
+    menuItems -= 2;
+  }
+
+  
+  ((cursorPos % 2) == 0) ? pom = 0 : pom = 20;
+
   display.clearDisplay();
   display.setTextSize(2);
-  cursorPos == 0 ? pom = 0 : pom = 20;
-  if( cursorPos < 2){
-    display.drawBitmap(10, 0, hand, 30, 30, WHITE);  
-    display.drawBitmap(10, 35, fist, 30, 30, WHITE);
-
-    
-    DSC(2, ((cursorPos) * 10) + pom + 10); 
-    DPTL(">");
-
+  switch (page){
+    case 0:
+      display.drawBitmap(10, 0, hand, 30, 30, WHITE);  
+      display.drawBitmap(10, 35, fist, 30, 30, WHITE);
+      break;
+    case 1:
+      treshold = 2;
+      display.drawBitmap(10, 0, fist, 30, 30, WHITE);
+      display.drawBitmap(10, 35, hand, 30, 30, WHITE);  
   }
-  else if( cursorPos >= 2){
-    display.drawBitmap(10, 35, fist, 30, 30, WHITE);
-    display.drawBitmap(10, 0, hand, 30, 30, WHITE);  
 
-    DSC(2, ((cursorPos) * 10) + pom + 10); 
-    DPTL(">");
-  }
-  
+
+  DSC(2, ((cursorPos - treshold) * 10) + pom + 10); 
+  DPTL(">");
+
   display.display();
 
 }
 
 void menuControl() {
-  PTL("menu");
+
 
 /*
   currentMenu = 0 -> Main menu
@@ -269,7 +284,6 @@ void menuControl() {
         case 1:
           resetCursor = 1;
           currentMenu = 1;
-          
           break;
 
         case 2:
@@ -354,6 +368,7 @@ void menuControl() {
   else if (currentMenu == 3){
     maxMenuItems = 6;
     minMenuItems = 0;
+    menuItems = 2;
     if(btnClick == 1){
       switch (cursorPos){
         case 0:
@@ -391,7 +406,6 @@ void setup(){
 }
 
 void loop(){
-  
   settingServo  == 1 ? updateServoPos() : updateCursorPos();
   btnCheck();
   switch (currentMenu) {
@@ -408,11 +422,8 @@ void loop(){
       gesturesScreen();
       break;     
   }  
-    
+ 
   menuControl();
-
-
-
 
   delay(100);
   
