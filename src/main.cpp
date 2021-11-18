@@ -406,6 +406,7 @@ void setup(){
 }
 
 void loop(){
+  // Stop updating CursorPos, when user is setting servo, call updateCursorPos instead
   settingServo  == 1 ? updateServoPos() : updateCursorPos();
   btnCheck();
   switch (currentMenu) {
