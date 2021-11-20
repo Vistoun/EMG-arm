@@ -7,9 +7,6 @@
 #include <Encoder.h>
 #include "Arm.hpp"
 #include "icons.hpp"
-#include <Arduino_FreeRTOS.h>
-#include <semphr.h> 
-
 
 /* On boards with a hardware serial port available for use, use
 that port to communicate with the Maestro. For other boards,
@@ -44,8 +41,8 @@ DPTL(">")
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define OLED_ADDR   0x3C // OLED I2C address
 
-#define CLK 3
-#define DT 2
+#define CLK 2
+#define DT 3
 #define SW 4
 
 #define SPEED 0 // 0 is fastest
@@ -53,7 +50,6 @@ DPTL(">")
 
 #define OPEN 8000
 #define CLOSE 3968
-
 
 bool settingServo = 0;
 int currentMenu = 0;
@@ -65,15 +61,12 @@ bool btnClick = 0;
 long oldPosition  = -999;
 int cursorPos = 1;
 int servoPos = 0;
+int value = 0;
 uint8_t btnPrev;
 bool resetCursor = 0;
 int page = 0;
-unsigned int menuItems = 0;
-unsigned long myTime;
-
-// Declare a mutex Semaphore Handle which we will use to manage the Serial Port.
-// It will be used to ensure only one Task is accessing this resource at any time.
-SemaphoreHandle_t xSerialSemaphore;
+int menuItems = 0;
+unsigned long myTime = 0;
 
 MicroMaestro maestro(maestroSerial);
 
@@ -83,8 +76,6 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
 
 Encoder enc(CLK, DT);
-
-void TaskAnalogRead( void *pvParameters );
 
 void cursorReset(){
     cursorPos = 0;
@@ -395,6 +386,7 @@ void menuControl() {
   
 }
 
+
 void setup(){
   pinMode(SW, INPUT_PULLUP);
   btnPrev = digitalRead(SW);
@@ -402,39 +394,24 @@ void setup(){
   // Set the serial baud rate.     
   Serial.begin(115200);
   maestroSerial.begin(9600);
-
- 
-
-  // Semaphores are useful to stop a Task proceeding, where it should be paused to wait,
-  // because it is sharing a resource, such as the Serial port.
-  // Semaphores should only be used whilst the scheduler is running, but we can set it up here.
-  if ( xSerialSemaphore == NULL )  // Check to confirm that the Serial Semaphore has not already been created.
-  {
-    xSerialSemaphore = xSemaphoreCreateMutex();  // Create a mutex semaphore we will use to manage the Serial Port
-    if ( ( xSerialSemaphore ) != NULL )
-      xSemaphoreGive( ( xSerialSemaphore ) );  // Make the Serial Port available for use, by "Giving" the Semaphore.
-  }
-
-  // Now set up two Tasks to run independently.
-  xTaskCreate(
-    TaskAnalogRead
-    ,  "AnalogRead"  // A name just for humans
-    ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
-    ,  NULL //Parameters for the task
-    ,  1  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-    ,  NULL ); //Task Handle
-
+  
   if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) { 
     Serial.println("SSD1306 allocation failed");
     for(;;); // Don't proceed, loop forever
   }
-
   display.clearDisplay();
-
+  display.setTextColor(WHITE);
+  display.drawBitmap(0, 0, fist, 25, 25, WHITE);
+  display.display();
+  delay(1000);
+  ruka.openFist();
 }
 
+
+
+
+
 void loop(){
-  
   // Stop updating CursorPos, when user is setting servo, call updateCursorPos instead
   settingServo  == 1 ? updateServoPos() : updateCursorPos();
   btnCheck();
@@ -454,43 +431,10 @@ void loop(){
   }  
  
   menuControl();
-  
   Serial.print("Time: ");
   myTime = millis();
 
   Serial.println(myTime); // prints time since program started
-
-  
 }
 
 
-
-
-void TaskAnalogRead( void *pvParameters __attribute__((unused)) )  // This is a Task.
-{
-
-  for (;;)
-  {
-    // read the input on analog pin 0:
-    int sensorValue = analogRead(A0);
-
-    // See if we can obtain or "Take" the Serial Semaphore.
-    // If the semaphore is not available, wait 5 ticks of the Scheduler to see if it becomes free.
-    if ( xSemaphoreTake( xSerialSemaphore, ( TickType_t ) 5 ) == pdTRUE )
-    {
-      // We were able to obtain or "Take" the semaphore and can now access the shared resource.
-      // We want to have the Serial Port for us alone, as it takes some time to print,
-      // so we don't want it getting stolen during the middle of a conversion.
-      // print out the value you read:
-     // Serial.println(sensorValue);
-      Serial.print("Time: ");
-      myTime = millis();
-
-      Serial.println(myTime); // prints time since program started
-
-      xSemaphoreGive( xSerialSemaphore ); // Now free or "Give" the Serial Port for others.
-    }
-
-    vTaskDelay(1);  // one tick delay (15ms) in between reads for stability
-  }
-}
