@@ -216,7 +216,7 @@ void Arm::thumbsUp(){
     closePinky();
 }
 
-void Arm::v(){
+void Arm::peace(){
     closeThumb();
     openIndex();
     openMiddle();

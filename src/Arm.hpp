@@ -51,7 +51,7 @@ public:
 
     //Gesta
     void thumbsUp();
-    void v();
+    void peace();
     void ok();
     void countdown();
     void rock();

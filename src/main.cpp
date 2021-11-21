@@ -20,16 +20,6 @@ pin D8 to transmit (TX). */
   SoftwareSerial maestroSerial(9, 8);
 #endif
 
-#define PT(s) Serial.print(s)  //makes life easier
-#define PTL(s) Serial.println(s)
-
-#define DPT(s) display.print(s)
-#define DPTL(s) display.println(s)
-#define DSC(x,y) display.setCursor(x,y)
-
-#define CURSOR(treshold) DSC(2, ((cursorPos - treshold) * 10) + 10); \
-DPTL(">")
-
 #define WRIST 0
 #define THUMB 1
 #define INDEX 2
@@ -51,6 +41,41 @@ DPTL(">")
 #define OPEN 8000
 #define CLOSE 3968
 
+#define PT(s) Serial.print(s)  //makes life easier
+#define PTL(s) Serial.println(s)
+
+#define DPT(s) display.print(s)
+#define DPTL(s) display.println(s)
+#define DSC(x,y) display.setCursor(x,y)
+
+#define CURSOR(treshold) DSC(2, ((cursorPos - treshold) * 10) + 10); \
+DPTL(">")
+
+#define CENTER() 
+
+#define FINGER(finger, value) DSC(((SCREEN_WIDTH - 64 ) / 2) , ((SCREEN_HEIGHT - 35) / 2) ); \ 
+      DPTL(finger);                                                            \
+      DSC( ((SCREEN_WIDTH - 55 ) / 2) , ((SCREEN_HEIGHT + 30 ) / 2) );          \
+      DPTL(value)
+
+
+#define CURSORS(min, max)   if(cursorPos == min){   \
+        DSC(116,((SCREEN_HEIGHT - 10) / 2) );       \
+        DPT(">");                                   \
+        }                                           \ 
+        else if(cursorPos == max ){                 \ 
+          DSC(0,((SCREEN_HEIGHT - 10) / 2) );       \ 
+          DPT("<");                                 \ 
+        }                                           \
+      else{                                         \ 
+        DSC(116,((SCREEN_HEIGHT - 10) / 2) );       \ 
+        DPT(">");                                   \ 
+        DSC(0,((SCREEN_HEIGHT - 10) / 2) );         \ 
+        DPT("<");                                   \
+      }
+  
+#define ICON(gesture) display.drawBitmap(((SCREEN_WIDTH - 45 ) / 2), ((SCREEN_HEIGHT - 45) / 2), gesture, 45, 45, WHITE)  
+
 bool settingServo = 0;
 int currentMenu = 0;
 int servoCon = 0;
@@ -59,13 +84,14 @@ int maxMenuItems = 3;
 int minMenuItems = 1;
 bool btnClick = 0;
 long oldPosition  = -999;
-int cursorPos = 1;
+int cursorPos = 0;
 int servoPos = 0;
 int value = 0;
 uint8_t btnPrev;
 bool resetCursor = 0;
 int page = 0;
 int menuItems = 0;
+int pageItems = 0;
 unsigned long myTime = 0;
 
 MicroMaestro maestro(maestroSerial);
@@ -159,106 +185,121 @@ void startScreen(){
     display.clearDisplay();
     display.setTextSize(2);
 
-    DSC(10, 0);
+    DSC(((SCREEN_WIDTH - 80 ) / 2) , 0);
     DPTL("EMG ARM");
-    //---------------------------------
-    display.setTextSize(1);
+    DSC(((SCREEN_WIDTH - 64 ) / 2) , ((SCREEN_HEIGHT - 10 ) / 2) );
 
-    DSC(10, 20);
-    DPTL("Manual");
+    switch (cursorPos){
+    case 0:
+      DSC(((SCREEN_WIDTH - 64 ) / 2) , ((SCREEN_HEIGHT - 10 ) / 2) );
+      DPTL("MANUAL");
+      break;
+    case 1:
+      DSC(((SCREEN_WIDTH - 35 ) / 2) , ((SCREEN_HEIGHT - 10 ) / 2) );
+      DPTL("EMG");
+      break;
+    case 2:
+      DSC(((SCREEN_WIDTH - 95 ) / 2) , ((SCREEN_HEIGHT - 10 ) / 2) );
+      DPTL("GESTURES");
+      break;  
+    }
 
-    DSC(10, 30);
-    DPTL("EMG");
-
-    DSC(10, 40);
-    DPTL("Gesta");
     
-    CURSOR(0);
+   CURSORS(0,maxMenuItems);
+
+  /*
+    if(cursorPos == 0){   
+        DSC(((SCREEN_WIDTH - 64 ) / 2),((SCREEN_HEIGHT - 10) / 2) );       
+        DPT(">");                                   
+    }                                           
+    else if(cursorPos == 3 ){                 
+          DSC(0,((SCREEN_HEIGHT - 10) / 2) );       
+          DPT("<");                                 
+    }                                          
+    else{                                         
+        DSC(116,((SCREEN_HEIGHT - 10) / 2) );      
+        DPT(">");                                  
+        DSC(0,((SCREEN_HEIGHT - 10) / 2) );         
+        DPT("<");                                   
+   }
+   */
     display.display();
   
 }
 
 void manualScreen(){
+  display.setTextSize(2);
   display.clearDisplay();
+  
+  switch (cursorPos) {
+    case 0:
+      FINGER("THUMB", ruka.getThumbPos());
+      break;
 
-  if(cursorPos < 5){
-    DSC(10, 10);
-    DPTL("THUMB");
-    DSC(60,10);
-    DPT(ruka.getThumbPos());
-    
-    DSC(10, 20);
-    DPTL("INDEX");
-    DSC(60,20);
-    DPT(ruka.getIndexPos());
-
-    DSC(10, 30);
-    DPTL("MIDDLE");
-    DSC(60, 30);
-    DPT(ruka.getMiddlePos());
-
-    DSC(10, 40);
-    DPTL("RING");
-    DSC(60, 40);
-    DPT(ruka.getRingPos());
-
-    DSC(10, 50);
-    DPTL("PINKY");
-    DSC(60, 50);
-    DPT(ruka.getPinkyPos());
-
-    CURSOR(0);
+    case 1:
+      FINGER("INDEX", ruka.getIndexPos());
+      break;
+    case 2:
+      FINGER("MIDDLE", ruka.getMiddlePos());
+      break;
+    case 3:
+      FINGER("RING", ruka.getRingPos());
+      break;
+    case 4:
+      FINGER("PINKY", ruka.getPinkyPos());
+      break;
+    case 5:  
+      FINGER("WRIST",ruka.getWristPos());
+      break;
+    case 6:
+      DSC(((SCREEN_WIDTH - 80 ) / 2) , ((SCREEN_HEIGHT - 10 ) / 2) );
+      DPTL("GO BACK"); 
+      break;  
   }
-
-  else if(cursorPos >= 5 ){
-    DSC(10, 10);
-    DPTL("WRIST");
-    DSC(60, 10);
-    DPT(ruka.getWristPos());
-
-    DSC(10,20);
-    DPTL("GO BACK"); 
-
-    CURSOR(5);
-  }
-
+  
+  CURSORS(0, maxMenuItems);
+  
   display.display();
 }
 
 
 
 void gesturesScreen(){
-  int pom = 0;
-  int treshold = 0;
-
-  if(cursorPos >= menuItems ){
-    page++;
-    menuItems += 2;
-  }
-  else if (cursorPos < menuItems-2 && page >= 1){
-    page--;
-    menuItems -= 2;
-  }
-
-  
-  ((cursorPos % 2) == 0) ? pom = 0 : pom = 20;
 
   display.clearDisplay();
   display.setTextSize(2);
-  switch (page){
-    case 0:
-      display.drawBitmap(10, 0, hand, 30, 30, WHITE);  
-      display.drawBitmap(10, 35, fist, 30, 30, WHITE);
-      break;
-    case 1:
-      treshold = 2;
-      display.drawBitmap(10, 0, fist, 30, 30, WHITE);
-      display.drawBitmap(10, 35, hand, 30, 30, WHITE);  
+  switch (cursorPos) {
+  case 0:
+    ICON(fist) ;
+    break;
+  case 1:
+    ICON(hand);
+    break;
+  case 2:
+    ICON(peace);
+    break;
+  case 3:
+    ICON(ok);
+    break; 
+  case 4:
+    ICON(thumbsUp);
+    break;
+  case 5:
+    ICON(callMe);
+    break;
+  case 6:
+    ICON(rock);
+    break; 
+  case 7:
+    ICON(countdown);
+    break;
+  case 8:
+    DSC(((SCREEN_WIDTH - 80 ) / 2) , ((SCREEN_HEIGHT - 10 ) / 2) );
+    DPTL("GO BACK");
+    break;             
   }
 
-
-  DSC(2, ((cursorPos - treshold) * 10) + pom + 10); 
-  DPTL(">");
+  CURSORS(0, maxMenuItems);
 
   display.display();
 
@@ -279,7 +320,7 @@ void menuControl() {
   if(currentMenu == 0){
   //  PTL("jsem stale currentmenu 0");
     maxMenuItems = 3;
-    minMenuItems = 1;
+    minMenuItems = 0;
     if(btnClick == 1){
         switch (cursorPos){
         case 1:
@@ -295,6 +336,7 @@ void menuControl() {
         case 3:
           resetCursor = 1;
           currentMenu = 3;
+          menuItems = 2;
           break;  
         }
     }
@@ -358,6 +400,7 @@ void menuControl() {
     if(btnClick == 1){
       switch (cursorPos){
         case 0:
+
         break;  
           
       }
@@ -367,18 +410,43 @@ void menuControl() {
 
   //Gestures screen
   else if (currentMenu == 3){
-    maxMenuItems = 6;
+    maxMenuItems = 8;
     minMenuItems = 0;
-    menuItems = 2;
     if(btnClick == 1){
       switch (cursorPos){
         case 0:
-          ruka.openFist();
+          ruka.closeFist();
           break;
 
         case 1:
-          ruka.closeFist();
-          break;   
+          ruka.openFist();
+          break;
+        case 2:
+          ruka.peace();
+          break;
+
+        case 3:
+          ruka.ok();
+          break;
+
+        case 4:
+          ruka.thumbsUp();
+          break;
+
+        case 5:
+          ruka.callMe();
+          break;
+
+        case 6:
+          ruka.rock();
+          break; 
+
+        case 7:
+          ruka.countdown();
+          break;
+
+        case 8:
+          currentMenu = 0;  
           
       }
     }
@@ -431,10 +499,7 @@ void loop(){
   }  
  
   menuControl();
-  Serial.print("Time: ");
-  myTime = millis();
-
-  Serial.println(myTime); // prints time since program started
+  delay(100);
 }
 
 
