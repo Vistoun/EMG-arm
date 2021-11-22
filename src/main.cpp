@@ -80,18 +80,13 @@ bool settingServo = 0;
 int currentMenu = 0;
 int servoCon = 0;
 int currentFinger = -1;
-int maxMenuItems = 3; 
-int minMenuItems = 1;
+int maxMenuItems = 0; 
+int minMenuItems = 0;
 bool btnClick = 0;
 long oldPosition  = -999;
 int cursorPos = 0;
 int servoPos = 0;
-int value = 0;
 uint8_t btnPrev;
-bool resetCursor = 0;
-int page = 0;
-int menuItems = 0;
-int pageItems = 0;
 unsigned long myTime = 0;
 
 MicroMaestro maestro(maestroSerial);
@@ -103,10 +98,7 @@ Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
 
 Encoder enc(CLK, DT);
 
-void cursorReset(){
-    cursorPos = 0;
-    enc.write(0);
-}
+
 
 void updateCursorPos(){
   cursorPos = enc.read() / 2;
@@ -118,14 +110,13 @@ void updateCursorPos(){
     cursorPos = minMenuItems;
     enc.write(minMenuItems*2);
   }
-
-  if(resetCursor){
-    cursorReset();
-    resetCursor = 0;
-  }
   
 }
 
+void cursorReset(){
+    cursorPos = 0;
+    enc.write(0);
+}
 
 void updateServoPos(){
   servoPos = enc.read() / 2;
@@ -187,7 +178,6 @@ void startScreen(){
 
     DSC(((SCREEN_WIDTH - 80 ) / 2) , 0);
     DPTL("EMG ARM");
-    DSC(((SCREEN_WIDTH - 64 ) / 2) , ((SCREEN_HEIGHT - 10 ) / 2) );
 
     switch (cursorPos){
     case 0:
@@ -204,25 +194,8 @@ void startScreen(){
       break;  
     }
 
-    
    CURSORS(0,maxMenuItems);
 
-  /*
-    if(cursorPos == 0){   
-        DSC(((SCREEN_WIDTH - 64 ) / 2),((SCREEN_HEIGHT - 10) / 2) );       
-        DPT(">");                                   
-    }                                           
-    else if(cursorPos == 3 ){                 
-          DSC(0,((SCREEN_HEIGHT - 10) / 2) );       
-          DPT("<");                                 
-    }                                          
-    else{                                         
-        DSC(116,((SCREEN_HEIGHT - 10) / 2) );      
-        DPT(">");                                  
-        DSC(0,((SCREEN_HEIGHT - 10) / 2) );         
-        DPT("<");                                   
-   }
-   */
     display.display();
   
 }
@@ -262,10 +235,7 @@ void manualScreen(){
   display.display();
 }
 
-
-
 void gesturesScreen(){
-
   display.clearDisplay();
   display.setTextSize(2);
   switch (cursorPos) {
@@ -319,24 +289,23 @@ void menuControl() {
   //Main menu
   if(currentMenu == 0){
   //  PTL("jsem stale currentmenu 0");
-    maxMenuItems = 3;
+    maxMenuItems = 2;
     minMenuItems = 0;
     if(btnClick == 1){
         switch (cursorPos){
-        case 1:
-          resetCursor = 1;
+        case 0:
           currentMenu = 1;
+          cursorReset();
           break;
 
-        case 2:
-          resetCursor = 1;
+        case 1:
           currentMenu = 2;
+          cursorReset();
           break;  
 
-        case 3:
-          resetCursor = 1;
+        case 2:
           currentMenu = 3;
-          menuItems = 2;
+          cursorReset();
           break;  
         }
     }
@@ -381,11 +350,9 @@ void menuControl() {
           break;  
         
         case 6:
-          enc.write(1);
-          cursorPos = 1;
           currentMenu = 0;
           settingServo = 0;
-          
+          cursorReset();
           break;  
           
         }
@@ -446,7 +413,8 @@ void menuControl() {
           break;
 
         case 8:
-          currentMenu = 0;  
+          currentMenu = 0;
+          cursorReset();
           
       }
     }
@@ -475,14 +443,11 @@ void setup(){
   ruka.openFist();
 }
 
-
-
-
-
 void loop(){
   // Stop updating CursorPos, when user is setting servo, call updateCursorPos instead
   settingServo  == 1 ? updateServoPos() : updateCursorPos();
   btnCheck();
+  menuControl();
   switch (currentMenu) {
     case 0:
       startScreen();
@@ -498,7 +463,7 @@ void loop(){
       break;     
   }  
  
-  menuControl();
+ 
   delay(100);
 }
 
