@@ -88,6 +88,8 @@ int cursorPos = 0;
 int servoPos = 0;
 uint8_t btnPrev;
 unsigned long myTime = 0;
+int sensorValue = 0;
+int sensorTreshold = 0;
 
 MicroMaestro maestro(maestroSerial);
 
@@ -444,6 +446,18 @@ void setup(){
 }
 
 void loop(){
+
+  sensorValue = analogRead(A0);
+
+  if(sensorValue >= 450){
+    ruka.closeFist();
+    PTL("jop");
+    delay(1000);
+  }
+  else{
+    ruka.openFist();
+  }
+  
   // Stop updating CursorPos, when user is setting servo, call updateCursorPos instead
   settingServo  == 1 ? updateServoPos() : updateCursorPos();
   btnCheck();
@@ -464,7 +478,7 @@ void loop(){
   }  
  
  
-  delay(100);
+  
 }
 
 
