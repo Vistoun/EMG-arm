@@ -277,6 +277,42 @@ void gesturesScreen(){
 
 }
 
+void emgScreen(){
+  display.setTextSize(2);
+  display.clearDisplay();
+  
+  switch (cursorPos) {
+    case 0:
+      FINGER("THUMB", ruka.getThumbPos());
+      break;
+
+    case 1:
+      FINGER("INDEX", ruka.getIndexPos());
+      break;
+    case 2:
+      FINGER("MIDDLE", ruka.getMiddlePos());
+      break;
+    case 3:
+      FINGER("RING", ruka.getRingPos());
+      break;
+    case 4:
+      FINGER("PINKY", ruka.getPinkyPos());
+      break;
+    case 5:  
+      FINGER("WRIST",ruka.getWristPos());
+      break;
+    case 6:
+      DSC(((SCREEN_WIDTH - 80 ) / 2) , ((SCREEN_HEIGHT - 10 ) / 2) );
+      DPTL("GO BACK"); 
+      break;  
+  }
+  
+  CURSORS(0, maxMenuItems);
+  
+  display.display();
+
+}
+
 void menuControl() {
 
 
