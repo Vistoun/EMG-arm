@@ -205,7 +205,7 @@ void startScreen(){
 void manualScreen(){
   display.setTextSize(2);
   display.clearDisplay();
-  
+  // each screen for one finger
   switch (cursorPos) {
     case 0:
       FINGER("THUMB", ruka.getThumbPos());
