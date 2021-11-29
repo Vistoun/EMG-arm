@@ -5,6 +5,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Encoder.h>
+#include <string.h>
 #include "Arm.hpp"
 #include "icons.hpp"
 
@@ -54,8 +55,8 @@ DPTL(">")
 #define CENTER() 
 
 #define FINGER(finger, value) DSC(((SCREEN_WIDTH - 64 ) / 2) , ((SCREEN_HEIGHT - 35) / 2) ); \ 
-      DPTL(finger);                                                            \
-      DSC( ((SCREEN_WIDTH - 55 ) / 2) , ((SCREEN_HEIGHT + 30 ) / 2) );          \
+      DPTL(finger);                                                                          \
+      DSC( ((SCREEN_WIDTH - 55 ) / 2) , ((SCREEN_HEIGHT + 30 ) / 2) );                       \
       DPTL(value)
 
 
@@ -91,17 +92,7 @@ unsigned long myTime = 0;
 int sensorValue = 0;
 int sensorTreshold = 0;
 bool sensorFist = 0;
-
-const int sensorPin = A0;	  	  		// muscle sensor pin number
-const int iMinThreshVal = 450;	  		// muscle sensor threshold value to begin controlled extension
-const int iServoStep = 10;        		// controls claw extension speed - increase to speed up
-const unsigned long lLockOut = 2000L;   // duration to hold max threshval to toggle the lock state (in milliseconds)
-
-// global variables
-unsigned long lStartTime = 0L;    		// variable to store the time the timer was started
-bool bStartLockTimer = false;     		// if true, the timer has been started; false otherwise
-bool bActiveLock = false;    
-
+bool sensorSwitch = 0;
 float millivolt = 0;
 
 MicroMaestro maestro(maestroSerial);
@@ -114,6 +105,20 @@ Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
 Encoder enc(DT, CLK);
 
 
+void oledDisplayCenter(String text) {
+  int16_t x1;
+  int16_t y1;
+  uint16_t width;
+  uint16_t height;
+
+  display.getTextBounds(text, 0, 0, &x1, &y1, &width, &height);
+
+  // display on horizontal and vertical center
+  display.clearDisplay(); // clear display
+  display.setCursor((SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - height) / 2);
+  display.println(text); // text to display
+  display.display();
+}
 
 void updateCursorPos(){
   cursorPos = enc.read() / 2;
@@ -291,41 +296,22 @@ void gesturesScreen(){
 }
 
 void emgScreen(){
-  display.setTextSize(2);
   display.clearDisplay();
-  
+ 
   switch (cursorPos) {
     case 0:
+      
+      FINGER("STATE", (sensorSwitch == 1 ? "ON" : "OFF"));
       
       break;
 
     case 1:
-      Serial.print("Sensor Value: ");
-      Serial.println(sensorValue);
       
-      Serial.print("Voltage: ");
-      Serial.print(millivolt*1000);
-      Serial.println(" mV");
-      Serial.println("");
-    
-      display.clearDisplay();
-      display.setTextSize(1);
-      display.setCursor(0, 0);
-      display.print("Sensor Value: ");
-      display.setTextSize(2);
-      display.setCursor(0, 10);
-      display.println(sensorValue,0);
-      
-      display.setTextSize(1);
-      display.setCursor(0, 35);
-      display.print("Voltage: ");
-      display.setTextSize(2);
-      display.setCursor(0, 45);
-      display.print(millivolt*1000);
-      display.println(" mv");
+     
       break;
     case 2:
       
+    
       break;
   }
   
@@ -429,10 +415,8 @@ void menuControl() {
         case 0:
 
         break;  
-          
       }
     }
-    
   }
 
   //Gestures screen
@@ -482,6 +466,19 @@ void menuControl() {
   
 }
 
+void sensor (){
+  sensorValue = analogRead(A0);
+  millivolt = (sensorValue/1023)*5;
+
+  if(sensorValue >= sensorTreshold && sensorFist == 0){
+    ruka.closeFist();
+    delay(250);
+  }
+  else if (sensorValue >= sensorTreshold && sensorFist == 1){
+    sensorFist = 0;
+    delay(250);
+  } 
+}
 
 void setup(){
   pinMode(SW, INPUT_PULLUP);
@@ -500,29 +497,18 @@ void setup(){
   display.drawBitmap(0, 0, fist, 25, 25, WHITE);
   display.display();
   delay(1000);
+
   ruka.openFist();
 }
 
 void loop(){
 
-  sensorValue = analogRead(A0);
-  millivolt = (sensorValue/1023)*5;
+  if(sensorSwitch){
+    sensor();
+    sensorFist == 1 ? ruka.closeFist() : ruka.openFist();
+  }
 
-  if(sensorValue >= 400 && sensorFist == 0){
-    sensorFist = 1;
-    ruka.closeFist();
-    delay(250);
-  }
-  else if (sensorValue >= 400 && sensorFist == 1){
-    ruka.openFist();
-    sensorFist = 0;
-    delay(250);
-  }
-  PTL(sensorFist);
- 
-  
-  
-  // Stop updating CursorPos, when user is setting servo, call updateCursorPos instead
+  // Stop moving with cursor position, when user is setting servo
   settingServo  == 1 ? updateServoPos() : updateCursorPos();
   btnCheck();
   menuControl();
@@ -535,69 +521,15 @@ void loop(){
       fingerMov(); 
       break;
     case 2:
+      emgScreen();
       break;
     case 3:
       gesturesScreen();
       break;     
   }  
- 
- 
+
   
+ delay(10);
+ 
 }
 
-
- /*
- // read muscle sensor value
-  int iSensorVal = analogRead(sensorPin);
-
-  // determine what state to put the claws in based on the sensor value  
-  // three possible states
-  if(iSensorVal < iMinThreshVal){ 
-    // state 1 - below threshold - hand
-    sensorFist = 0;
-  }
-  else { 
-    // state 2 - above max threshold - fist
-    sensorFist = 1;
-  } 
-  
-  // if sensor is in state 2, start timer to trigger lLockOut
-  if(sensorFist == 1) {
-    // if the timer hasn't been started, then start it.
-    if(!bStartLockTimer) {
-      lStartTime = millis();
-      bStartLockTimer = true;
-    }
-  }
-  else {
-    // reset timer variables
-    lStartTime = 0L;
-    bStartLockTimer = false;
-  }
-    
-  // check to see if the timer was started and it runs for the amount of time required to trigger lock/unlock
-  if(bStartLockTimer && millis()-lStartTime >= lLockOut) {      
-    // toggle lock state
-    bActiveLock = !bActiveLock;
-    
-    // reset timer variables
-    lStartTime = 0L;
-    bStartLockTimer = false;
-    
-    // set servo value to max when locking
-    if(bActiveLock) {
-      sensorFist = 1;
-    }
-    else { // reset servo value to min when unlocking
-      sensorFist = 0;
-    }
-    
-    // pause for a second to allow the user to adjust to the new setting
-    delay(1000);
-  }
-
-    PTL(sensorFist);
-  // delay to not overload the ADC
-  delay(100);
-
-*/
