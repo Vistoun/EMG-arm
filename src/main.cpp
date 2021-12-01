@@ -64,11 +64,11 @@ DPTL(">")
       DPTL(value)
 
 
-#define CURSORS(min, max)   if(cursorPos == min){   \
+#define CURSORS() if(cursorPos == 0) {              \
         DSC(116,((SCREEN_HEIGHT - 10) / 2) );       \
         DPT(">");                                   \
         }                                           \ 
-        else if(cursorPos == max ){                 \ 
+        else if(cursorPos == maxMenuItems ){        \ 
           DSC(0,((SCREEN_HEIGHT - 10) / 2) );       \ 
           DPT("<");                                 \ 
         }                                           \
@@ -86,23 +86,18 @@ int currentMenu = 0;
 int servoCon = 0;
 int currentFinger = -1;
 int maxMenuItems = 0; 
-int minMenuItems = 0;
 bool btnClick = 0;
-long oldPosition  = -999;
+int oldPosition  = -99;
 int cursorPos = 0;
 int servoPos = 0;
 uint8_t btnPrev;
-unsigned long myTime = 0;
 int sensorValue = 0;
 int sensorTreshold = 0;
 bool sensorFist = 0;
 bool sensorSwitch = 0;
-float millivolt = 0;
+int valMax = 450;
+int valMin = 100;
 
- int16_t x1;
-  int16_t y1;
-  uint16_t width;
-  uint16_t height;
 
 MicroMaestro maestro(maestroSerial);
 
@@ -114,47 +109,18 @@ Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
 Encoder enc(DT, CLK);
 
 
-void displayCenter(String text) {
-  int16_t x1;
-  int16_t y1;
-  uint16_t width;
-  uint16_t height;
-
-  display.getTextBounds(text, 0, 0, &x1, &y1, &width, &height);
-  DSC((SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - height) / 2);
-  DPTL(text); 
-}
-
-void displayCenterTop(String text){
-  int16_t x1;
-  int16_t y1;
-  uint16_t width;
-
-  display.getTextBounds(text, 0, 0, &x1, &y1, &width, NULL);
-  DSC((SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - 45) / 2);
-  DPTL(text);
-
-}
-
-void displayCenterBottom(String text){
-  int16_t x1;
-  int16_t y1;
-  uint16_t width;
-
-  display.getTextBounds(text, 0, 0, &x1, &y1, &width, NULL);
-  DSC((SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT + 30) / 2);
-  DPTL(text); 
-}
 
 void updateCursorPos(){
   cursorPos = enc.read() / 2;
+
   if(cursorPos >= maxMenuItems){
     cursorPos = maxMenuItems;
     enc.write(maxMenuItems*2);
   }
-  else if(cursorPos <= minMenuItems){
-    cursorPos = minMenuItems;
-    enc.write(minMenuItems*2);
+
+  else if(cursorPos <= 0){
+    cursorPos = 0;
+    enc.write(0);
   }
   
 }
@@ -240,7 +206,7 @@ void startScreen(){
       break;  
     }
 
-   CURSORS(0,maxMenuItems);
+   CURSORS();
 
     display.display();
   
@@ -276,7 +242,7 @@ void manualScreen(){
       break;  
   }
   
-  CURSORS(0, maxMenuItems);
+  CURSORS();
   
   display.display();
 }
@@ -315,7 +281,7 @@ void gesturesScreen(){
     break;             
   }
 
-  CURSORS(0, maxMenuItems);
+  CURSORS();
 
   display.display();
 
@@ -323,17 +289,32 @@ void gesturesScreen(){
 
 void emgScreen(){
   display.clearDisplay();
- 
+
   switch (cursorPos) {
-    case 0:
-      FINGER("STATE", (sensorSwitch == 1 ? "ON" : "OFF"));
+  case 0:
+    FINGER("TRESHOLD", sensorTreshold);  
     break;
+  
+  case 1:
+      DSC(((SCREEN_WIDTH - 64 ) / 2) , ((SCREEN_HEIGHT - 35) / 2) ); 
+      DPTL("VALUE");
+
+      DSC(((SCREEN_WIDTH - 64 ) / 2) , ((SCREEN_HEIGHT - 10) / 2) );
+      DPT(sensorValue);
+
+      DSC(((SCREEN_WIDTH - 55 ) / 2) ,((SCREEN_HEIGHT + 30 ) / 2));                       
+      DPT(valMax);
+
+      DSC(((SCREEN_WIDTH - 20 ) / 2) ,((SCREEN_HEIGHT + 30 ) / 2)); 
+      DPT(valMin);
+
+    break;
+
   }
   
-  CURSORS(0, maxMenuItems);
+  CURSORS();
   
   display.display();
-
 }
 
 void menuControl() {
@@ -351,7 +332,6 @@ void menuControl() {
   if(currentMenu == 0){
   //  PTL("jsem stale currentmenu 0");
     maxMenuItems = 2;
-    minMenuItems = 0;
     if(btnClick == 1){
         switch (cursorPos){
         case 0:
@@ -375,7 +355,6 @@ void menuControl() {
   // Manual menu
   else if (currentMenu == 1){
     maxMenuItems = 6;
-    minMenuItems = 0;
     if(btnClick == 1){
       settingServo != 1 ? settingServo = 1 : settingServo = 0;
       servoCon = 0;
@@ -424,7 +403,6 @@ void menuControl() {
   // EMG screen
   else if (currentMenu == 2){
     maxMenuItems = 6;
-    minMenuItems = 0;
     if(btnClick == 1){
       switch (cursorPos){
         case 0:
@@ -437,7 +415,6 @@ void menuControl() {
   //Gestures screen
   else if (currentMenu == 3){
     maxMenuItems = 8;
-    minMenuItems = 0;
     if(btnClick == 1){
       switch (cursorPos){
         case 0:
@@ -483,7 +460,6 @@ void menuControl() {
 
 void sensor (){
   sensorValue = analogRead(A0);
-  millivolt = (sensorValue/1023)*5;
 
   if(sensorValue >= sensorTreshold && sensorFist == 0){
     ruka.closeFist();
@@ -493,6 +469,13 @@ void sensor (){
     sensorFist = 0;
     delay(250);
   } 
+
+  if(sensorValue > valMax){
+    valMax = sensorValue;
+  }
+  else if(sensorValue < valMin){
+    valMin = sensorValue;
+  }
 }
 
 void setup(){
