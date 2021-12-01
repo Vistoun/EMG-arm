@@ -7,6 +7,7 @@
 #include <Encoder.h>
 #include <string.h>
 #include "Arm.hpp"
+
 #include "icons.hpp"
 
 /* On boards with a hardware serial port available for use, use
@@ -52,7 +53,10 @@ pin D8 to transmit (TX). */
 #define CURSOR(treshold) DSC(2, ((cursorPos - treshold) * 10) + 10); \
 DPTL(">")
 
-#define CENTER() 
+#define CENTERTOP(text)                                                       \
+        display.getTextBounds(text, 0, 0, &x1, &y1, &width, NULL);            \
+        DSC((SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - 45) / 2);            \ 
+        DPTL(text)
 
 #define FINGER(finger, value) DSC(((SCREEN_WIDTH - 64 ) / 2) , ((SCREEN_HEIGHT - 35) / 2) ); \ 
       DPTL(finger);                                                                          \
@@ -95,6 +99,11 @@ bool sensorFist = 0;
 bool sensorSwitch = 0;
 float millivolt = 0;
 
+ int16_t x1;
+  int16_t y1;
+  uint16_t width;
+  uint16_t height;
+
 MicroMaestro maestro(maestroSerial);
 
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
@@ -105,19 +114,36 @@ Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
 Encoder enc(DT, CLK);
 
 
-void oledDisplayCenter(String text) {
+void displayCenter(String text) {
   int16_t x1;
   int16_t y1;
   uint16_t width;
   uint16_t height;
 
   display.getTextBounds(text, 0, 0, &x1, &y1, &width, &height);
+  DSC((SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - height) / 2);
+  DPTL(text); 
+}
 
-  // display on horizontal and vertical center
-  display.clearDisplay(); // clear display
-  display.setCursor((SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - height) / 2);
-  display.println(text); // text to display
-  display.display();
+void displayCenterTop(String text){
+  int16_t x1;
+  int16_t y1;
+  uint16_t width;
+
+  display.getTextBounds(text, 0, 0, &x1, &y1, &width, NULL);
+  DSC((SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - 45) / 2);
+  DPTL(text);
+
+}
+
+void displayCenterBottom(String text){
+  int16_t x1;
+  int16_t y1;
+  uint16_t width;
+
+  display.getTextBounds(text, 0, 0, &x1, &y1, &width, NULL);
+  DSC((SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT + 30) / 2);
+  DPTL(text); 
 }
 
 void updateCursorPos(){
@@ -300,25 +326,8 @@ void emgScreen(){
  
   switch (cursorPos) {
     case 0:
-      
       FINGER("STATE", (sensorSwitch == 1 ? "ON" : "OFF"));
-      
-      break;
-
-    case 1:
-      FINGER("TRESHOLD", sensorTreshold);
-      DSC(((SCREEN_WIDTH - 55 ) / 2) , ((SCREEN_HEIGHT + 30 ) / 2) );     
-      DPTL(sensorTrehold); 
-      
-     
-      break;
-    case 2:
-      FINGER("VOLATAGE", millivolt);  
-    
-      break;
-    case 3:
-      
-      break;
+    break;
   }
   
   CURSORS(0, maxMenuItems);
