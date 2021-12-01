@@ -306,12 +306,18 @@ void emgScreen(){
       break;
 
     case 1:
+      FINGER("TRESHOLD", sensorTreshold);
+      DSC(((SCREEN_WIDTH - 55 ) / 2) , ((SCREEN_HEIGHT + 30 ) / 2) );     
+      DPTL(sensorTrehold); 
       
      
       break;
     case 2:
-      
+      FINGER("VOLATAGE", millivolt);  
     
+      break;
+    case 3:
+      
       break;
   }
   
