@@ -7,7 +7,6 @@
 #include <Encoder.h>
 #include <string.h>
 #include "Arm.hpp"
-
 #include "icons.hpp"
 
 /* On boards with a hardware serial port available for use, use
@@ -50,8 +49,6 @@ pin D8 to transmit (TX). */
 #define DPTL(s) display.println(s)
 #define DSC(x,y) display.setCursor(x,y)
 
-#define CURSOR(treshold) DSC(2, ((cursorPos - treshold) * 10) + 10); \
-DPTL(">")
 
 #define CENTERTOP(text)                                                       \
         display.getTextBounds(text, 0, 0, &x1, &y1, &width, NULL);            \
@@ -82,21 +79,21 @@ DPTL(">")
 #define ICON(gesture) display.drawBitmap(((SCREEN_WIDTH - 45 ) / 2), ((SCREEN_HEIGHT - 45) / 2), gesture, 45, 45, WHITE)  
 
 bool settingServo = 0;
-int currentMenu = 0;
-int servoCon = 0;
-int currentFinger = -1;
-int maxMenuItems = 0; 
+uint8_t currentMenu = 0;
+unit16_t servoCon = 0;
+uint8_t currentFinger = -1;
+uint8_t maxMenuItems = 0; 
 bool btnClick = 0;
-int oldPosition  = -99;
-int cursorPos = 0;
-int servoPos = 0;
+int8_t oldPosition  = -99;
+uint8_t cursorPos = 0;
+uint8_t servoPos = 0;
 uint8_t btnPrev;
-int sensorValue = 0;
-int sensorTreshold = 0;
+uint16_t sensorValue = 0;
+uint16_t sensorTreshold = 0;
 bool sensorFist = 0;
 bool sensorSwitch = 0;
-int valMax = 450;
-int valMin = 100;
+uint16_t valMax = 450;
+uint8_t valMin = 100;
 
 
 MicroMaestro maestro(maestroSerial);
