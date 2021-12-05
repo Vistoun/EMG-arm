@@ -11,6 +11,7 @@
 - I2C OLED display 128x64
 - Rotační enkodér
 - 6xMG995R Servo 
+- Pololu Micro Maestro 6-CHANNEL
 
 ### What to do: 
 - Složení ruky
