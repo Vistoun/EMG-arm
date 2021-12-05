@@ -52,35 +52,45 @@ pin D8 to transmit (TX). */
 
 #define CENTERTOP(text)                                                       \
         display.getTextBounds(text, 0, 0, &x1, &y1, &width, NULL);            \
-        DSC((SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - 45) / 2);            \ 
-        DPTL(text)
+        DSC((SCREEN_WIDTH - width) / 2, 1);                                  \ 
+        DPTL(F(text))
+
+#define CENTER(text)                                                              \
+        display.getTextBounds(text, 0, 0, &x1, &y1, &width, &height);             \
+        DSC((SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - height) / 2);            \ 
+        DPTL(F(text))     
+
+#define CENTERBOTTOM(text)                                                      \
+        display.getTextBounds(text, 0, 0, &x1, &y1, &width, NULL);              \
+        DSC((SCREEN_WIDTH - width) / 2,  45 );                                  \ 
+        DPTL(F(text))      
 
 #define FINGER(finger, value) DSC(((SCREEN_WIDTH - 64 ) / 2) , ((SCREEN_HEIGHT - 35) / 2) ); \ 
-      DPTL(finger);                                                                          \
+      DPTL(F(finger));                                                                          \
       DSC( ((SCREEN_WIDTH - 55 ) / 2) , ((SCREEN_HEIGHT + 30 ) / 2) );                       \
       DPTL(value)
 
 
 #define CURSORS() if(cursorPos == 0) {              \
         DSC(116,((SCREEN_HEIGHT - 10) / 2) );       \
-        DPT(">");                                   \
+        DPT(F(">"));                                \
         }                                           \ 
         else if(cursorPos == maxMenuItems ){        \ 
           DSC(0,((SCREEN_HEIGHT - 10) / 2) );       \ 
-          DPT("<");                                 \ 
+          DPT(F("<"));                              \ 
         }                                           \
       else{                                         \ 
         DSC(116,((SCREEN_HEIGHT - 10) / 2) );       \ 
-        DPT(">");                                   \ 
+        DPT(F(">"));                                \ 
         DSC(0,((SCREEN_HEIGHT - 10) / 2) );         \ 
-        DPT("<");                                   \
+        DPT(F("<"));                                \
       }
   
 #define ICON(gesture) display.drawBitmap(((SCREEN_WIDTH - 45 ) / 2), ((SCREEN_HEIGHT - 45) / 2), gesture, 45, 45, WHITE)  
 
 bool settingServo = 0;
 uint8_t currentMenu = 0;
-unit16_t servoCon = 0;
+uint16_t servoCon = 0;
 uint8_t currentFinger = -1;
 uint8_t maxMenuItems = 0; 
 bool btnClick = 0;
@@ -89,12 +99,17 @@ uint8_t cursorPos = 0;
 uint8_t servoPos = 0;
 uint8_t btnPrev;
 uint16_t sensorValue = 0;
-uint16_t sensorTreshold = 0;
+uint16_t sensorTreshold = 300;
 bool sensorFist = 0;
 bool sensorSwitch = 0;
 uint16_t valMax = 450;
 uint8_t valMin = 100;
+uint8_t encoderMode = 0;
 
+int16_t x1;
+int16_t y1;
+uint16_t width;
+uint16_t height;
 
 MicroMaestro maestro(maestroSerial);
 
@@ -108,18 +123,38 @@ Encoder enc(DT, CLK);
 
 
 void updateCursorPos(){
-  cursorPos = enc.read() / 2;
+    int16_t pos = enc.read() / 2;
 
-  if(cursorPos >= maxMenuItems){
-    cursorPos = maxMenuItems;
-    enc.write(maxMenuItems*2);
-  }
+    if(pos != oldPosition){
+      switch(encoderMode){
+        case 0:
+          cursorPos = pos;
+          if(cursorPos >= maxMenuItems){
+            cursorPos = maxMenuItems;
+            enc.write(maxMenuItems*2);
+          }
+          else if(cursorPos <= 0){
+            cursorPos = 0;
+            enc.write(0);
+          }
+          break;
 
-  else if(cursorPos <= 0){
-    cursorPos = 0;
-    enc.write(0);
-  }
-  
+        case 1:
+          if(oldPosition < pos ){
+            servoCon >= OPEN ? servoCon = OPEN : servoCon += 200;
+          } else if (oldPosition > pos){
+            servoCon <= CLOSE ? servoCon = CLOSE : servoCon -= 200;
+          }
+          oldPosition = pos;
+          break;
+
+        case 2:
+          oldPosition < pos ? sensorTreshold += 1 : sensorTreshold -= 1;
+          break;
+          
+        }
+      oldPosition = pos;
+  } 
 }
 
 void cursorReset(){
@@ -129,14 +164,7 @@ void cursorReset(){
 
 void updateServoPos(){
   servoPos = enc.read() / 2;
-  if (servoPos != oldPosition) { 
-    if(oldPosition < servoPos ){
-      servoCon >= OPEN ? servoCon = OPEN : servoCon += 200;
-    } else if (oldPosition > servoPos){
-      servoCon <= CLOSE ? servoCon = CLOSE : servoCon -= 200;
-    }
-    oldPosition = servoPos;
-  }
+  
 }
   
 void btnCheck(){
@@ -285,30 +313,52 @@ void gesturesScreen(){
 }
 
 void emgScreen(){
+  display.setTextSize(2);
   display.clearDisplay();
+ 
 
   switch (cursorPos) {
   case 0:
-    FINGER("TRESHOLD", sensorTreshold);  
+    CENTERTOP("SENSOR");
+
+    if(sensorSwitch){
+      CENTERBOTTOM("ON");
+    }else{
+      CENTERBOTTOM("OFF");
+    }
     break;
-  
+
   case 1:
-      DSC(((SCREEN_WIDTH - 64 ) / 2) , ((SCREEN_HEIGHT - 35) / 2) ); 
-      DPTL("VALUE");
-
-      DSC(((SCREEN_WIDTH - 64 ) / 2) , ((SCREEN_HEIGHT - 10) / 2) );
-      DPT(sensorValue);
-
-      DSC(((SCREEN_WIDTH - 55 ) / 2) ,((SCREEN_HEIGHT + 30 ) / 2));                       
-      DPT(valMax);
-
-      DSC(((SCREEN_WIDTH - 20 ) / 2) ,((SCREEN_HEIGHT + 30 ) / 2)); 
-      DPT(valMin);
-
+    CENTERTOP("TRESHOLD");  
+    DSC(50, ((SCREEN_HEIGHT - 10) / 2) );
+    DPT(sensorTreshold);
+    
     break;
-
-  }
   
+  case 2:
+    CENTERTOP("VALUE");  
+
+    DSC(60, ((SCREEN_HEIGHT - 10) / 2) );
+    DPT(sensorValue);
+
+    display.setTextSize(1);
+    DSC(5 , 50);
+    DPT("MAX:");  
+    DSC(30 , 50);        
+    DPTL(valMax);
+
+    DSC(80, 50); 
+    DPT("MIN:");
+    DSC(105, 50); 
+    DPT(valMin);
+    display.setTextSize(2);
+    
+    break;
+  
+  case 3:
+    CENTER("GO BACK");
+  }
+ 
   CURSORS();
   
   display.display();
@@ -399,12 +449,20 @@ void menuControl() {
 
   // EMG screen
   else if (currentMenu == 2){
-    maxMenuItems = 6;
+    maxMenuItems = 3;
     if(btnClick == 1){
       switch (cursorPos){
         case 0:
-
+          sensorSwitch != 1 ? sensorSwitch = 1 : sensorSwitch = 0;
         break;  
+
+        case 1:
+          encoderMode != 2 ? encoderMode = 2 : encoderMode = 0;
+          if(enc.read() / 2 != 2)
+            enc.write(2);
+          break;
+        case 3:
+          currentMenu = 0;
       }
     }
   }
