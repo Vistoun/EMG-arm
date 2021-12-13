@@ -2,7 +2,7 @@
 #include <PololuMaestro.h>
 extern MicroMaestro maestro;
 
-Arm::Arm(int wrist, int thumb, int index, int middle, int ring, int pinky, int speed, int acceleration, int open, int close){
+Arm::Arm(uint8_t wrist, uint8_t thumb, uint8_t index, uint8_t middle, uint8_t ring, uint8_t pinky, uint16_t speed, uint16_t acceleration, uint16_t open, uint16_t close){
     this->wrist = wrist;
     this->thumb = thumb;
     this->index = index;
@@ -30,103 +30,103 @@ Arm::~Arm(){
 
 }
 
-int Arm::getWrist()const{
+uint8_t Arm::getWrist()const{
     return this->wrist;
 }
 
-int Arm::getThumb()const{
+uint8_t Arm::getThumb()const{
     return this->thumb;
 }
 
-int Arm::getIndex()const{
+uint8_t Arm::getIndex()const{
     return this->index;
 }
 
-int Arm::getMiddle()const{
+uint8_t Arm::getMiddle()const{
     return this->middle;
 }
 
-int Arm::getRing()const{
+uint8_t Arm::getRing()const{
     return this->ring;
 }
 
-int Arm::getPinky()const{
+uint8_t Arm::getPinky()const{
     return this->pinky;
 }
 
-int Arm::getSpeed()const{
+uint16_t Arm::getSpeed()const{
     return this->speed;
 }
 
-int Arm::getAcceleration()const{
+uint16_t Arm::getAcceleration()const{
     return this->acceleration;
 }
 
 
 
-int Arm::getWristPos()const{
+uint16_t Arm::getWristPos()const{
     return (maestro.getPosition(this->wrist));
 }
 
-int Arm::getThumbPos()const{
+uint16_t Arm::getThumbPos()const{
     return (maestro.getPosition(this->thumb));
 }
 
 
-int Arm::getIndexPos()const{
+uint16_t Arm::getIndexPos()const{
     return (maestro.getPosition(this->index));
 }
 
-int Arm::getMiddlePos()const{
+uint16_t Arm::getMiddlePos()const{
     return (maestro.getPosition(this->middle));
 }
 
-int Arm::getRingPos()const{
+uint16_t Arm::getRingPos()const{
     return (maestro.getPosition(this->ring));
 }
 
-int Arm::getPinkyPos()const{
+uint16_t Arm::getPinkyPos()const{
     return (maestro.getPosition(this->pinky));
 }
 
 
 
-void Arm::setWrist(int wrist){
+void Arm::setWrist(uint8_t wrist){
     this->wrist = wrist;
     return;
 }
 
-void Arm::setThumb(int thumb){
+void Arm::setThumb(uint8_t thumb){
     this->thumb = thumb;
     return;
 }
 
-void Arm::setIndex(int index){
+void Arm::setIndex(uint8_t index){
     this->index = index;
     return;
 }
 
-void Arm::setMiddle(int middle){
+void Arm::setMiddle(uint8_t middle){
     this->middle = middle;
     return;
 }
 
-void Arm::setRing(int ring){
+void Arm::setRing(uint8_t ring){
     this->ring = ring;
     return;
 }
 
-void Arm::setPinky(int pinky){
+void Arm::setPinky(uint8_t pinky){
     this->pinky = pinky;
     return;
 }
 
-void Arm::setSpeed(int speed){
+void Arm::setSpeed(uint16_t speed){
     this->speed = speed;
     return;
 }
 
-void Arm::setAcceleration(int acceleration){
+void Arm::setAcceleration(uint16_t acceleration){
     this->acceleration = acceleration;
     return;
 }
@@ -134,59 +134,59 @@ void Arm::setAcceleration(int acceleration){
 
 // 992 us = 3 968
 // 2000 us = 8000
-void Arm::openThumb(){
+void Arm::openThumb()const{
     maestro.setTarget(this->thumb,this->open);
     return;
 }
 
-void Arm::openIndex(){
+void Arm::openIndex()const{
     maestro.setTarget(this->index,this->open);
     return;
 }
 
-void Arm::openMiddle(){
+void Arm::openMiddle()const{
     maestro.setTarget(this->middle,this->open);
     return;
 }
 
-void Arm::openRing(){
+void Arm::openRing()const{
     maestro.setTarget(this->ring,this->open);
     return;
 }
 
-void Arm::openPinky(){
+void Arm::openPinky()const{
     maestro.setTarget(this->pinky,this->open);
     return;
 }
 
 
-void Arm::closeThumb(){
+void Arm::closeThumb()const{
     maestro.setTarget(this->thumb, close);
     return;
 }
 
-void Arm::closeIndex(){
+void Arm::closeIndex()const{
     maestro.setTarget(this->index, close);
     return;
 }
 
-void Arm::closeMiddle(){
+void Arm::closeMiddle()const{
     maestro.setTarget(this->middle, close);
     return;
 }
 
-void Arm::closeRing(){
+void Arm::closeRing()const{
     maestro.setTarget(this->ring, close);
     return;
 }
 
-void Arm::closePinky(){
+void Arm::closePinky()const{
     maestro.setTarget(this->pinky, close);
     return;
 }
 
 
-void Arm::openFist(){
+void Arm::openFist()const{
     openThumb();
     openIndex();
     openMiddle();
@@ -195,7 +195,7 @@ void Arm::openFist(){
     return;
 }
 
-void Arm::closeFist(){
+void Arm::closeFist()const{
     closeThumb();
     closeIndex();
     closeMiddle();
@@ -204,11 +204,11 @@ void Arm::closeFist(){
     return;
 }
 
-void Arm::moveFinger(int finger, int pos){
+void Arm::moveFinger(uint8_t finger, uint16_t pos){
     maestro.setTarget(finger, pos);
 }
 
-void Arm::thumbsUp(){
+void Arm::thumbsUp()const{
     openThumb();
     closeIndex();
     closeMiddle();
@@ -216,7 +216,7 @@ void Arm::thumbsUp(){
     closePinky();
 }
 
-void Arm::peace(){
+void Arm::peace()const{
     closeThumb();
     openIndex();
     openMiddle();
@@ -224,7 +224,7 @@ void Arm::peace(){
     closePinky();
 }
 
-void Arm::ok(){
+void Arm::ok()const{
     closeThumb();
     closeIndex();
     openMiddle();
@@ -232,7 +232,7 @@ void Arm::ok(){
     openPinky();
 }
 
-void Arm::countdown(){
+void Arm::countdown()const{
     openFist();
     closePinky();
     delay(1000);
@@ -246,7 +246,7 @@ void Arm::countdown(){
 
 }
 
-void Arm::rock(){
+void Arm::rock()const{
     openPinky();
     closeRing();
     closeMiddle();
@@ -254,10 +254,11 @@ void Arm::rock(){
     closeThumb();
 }
 
-void Arm::callMe(){
+void Arm::callMe()const{
     openPinky();
     closeRing();
     closeMiddle();
     closeIndex();
     openThumb();
 }
+

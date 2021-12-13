@@ -5,20 +5,69 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Encoder.h>
-#include <string.h>
 #include "Arm.hpp"
 #include "icons.hpp"
+#include "Battery.h"
+#include <VoltageReference.h>
+
+
+
+/*
+
+ENCODER:
+GND -> GND 
++ -> 5V
+SW -> 4
+DT -> 2
+CLK -> 3
+
+
+OLED:
+GND -> GND 
+VIN -> 5V 
+SCL -> A5
+SDA -> A4
+
+BUZZER:
+GND -> GND 
++ -> 8
+
+RGB LED OPTIONAL:
+GND -> GND 
+RED -> 7
+GREEN -> 6 
+BLUE -> 5
+
+MICRO MAESTRO:
+GND -> GND 
+RX -> 11
+TX -> 10
+
+EMG SENSOR:
+GND -> GND
++ -> 5V
+SIGNAL -> A0
+
+
+*/
+
+
 
 /* On boards with a hardware serial port available for use, use
 that port to communicate with the Maestro. For other boards,
 create a SoftwareSerial object using pin D9 to receive (RX) and
-pin D8 to transmit (TX). */
+pin D8 to transmit (TX).
+
+Maestro RX -> 8 (TX)
+Maestro TX -> 9 (RX)
+
+ */
 
 #ifdef SERIAL_PORT_HARDWARE_OPEN
-#define maestroSerial SERIAL_PORT_HARDWARE_OPEN
+  #define maestroSerial SERIAL_PORT_HARDWARE_OPEN
 #else
-#include <SoftwareSerial.h>
-SoftwareSerial maestroSerial(9, 8);
+  #include <SoftwareSerial.h>
+  SoftwareSerial maestroSerial(10, 11);
 #endif
 
 // Define fingers servo pin, connected to micro meastro
@@ -29,88 +78,65 @@ SoftwareSerial maestroSerial(9, 8);
 #define RING 4
 #define PINKY 5
 
-// Define servos speed and acceleration
+// Define servos speed and acceleration 
 #define SPEED 0 // 0 is fastest
-#define ACCELERATION 0
+#define ACCELERATION 0 
 
 //A typical RC hobby servo responds to pulses between 1 ms (4000) and 2 ms (8000).
-#define OPEN 8000  // value when is finger is fully open
+#define OPEN 8000 // value when is finger is fully open
 #define CLOSE 3968 // value when is fully closed
 
 // OLED pins
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
-#define OLED_ADDR 0x3C   // OLED I2C address
+#define OLED_ADDR   0x3C // OLED I2C address
 
-// Encoder pins
-#define CLK 3
+// Encoder pins 
+#define CLK 3 
 #define DT 2
 #define SW 4 // this port is used for button function on encoder
 
-#define PT(s) Serial.print(s) //makes life easier
+#define RED 7
+#define GREEN 6
+#define BLUE 5
+
+#define BUZZER 13
+
+#define PT(s) Serial.print(s)  //makes life easier
 #define PTL(s) Serial.println(s)
 
 #define DPT(s) display.print(s)
 #define DPTL(s) display.println(s)
-#define DSC(x, y) display.setCursor(x, y)
+#define DSC(x,y) display.setCursor(x,y)
 
-#define CENTERTOP(text)                                      \
-  display.getTextBounds(text, 0, 0, &x1, &y1, &width, NULL); \
-  DSC((SCREEN_WIDTH - width) / 2, 1);                        \
-  \ 
+
+#define CENTERTOP(text)                                                       \
+        display.getTextBounds(text, 0, 0, &x1, &y1, &width, NULL);            \
+        DSC((SCREEN_WIDTH - width) / 2, 1);                                   \ 
         DPTL(F(text))
 
-#define CENTER(text)                                             \
-  display.getTextBounds(text, 0, 0, &x1, &y1, &width, &height);  \
-  DSC((SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - height) / 2); \
-  \ 
-        DPTL(F(text))
+#define CENTER(text)                                                              \
+        display.getTextBounds(text, 0, 0, &x1, &y1, &width, &height);             \
+        DSC((SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - height) / 2);            \ 
+        DPTL(F(text))     
 
-#define CENTERBOTTOM(text)                                   \
-  display.getTextBounds(text, 0, 0, &x1, &y1, &width, NULL); \
-  DSC((SCREEN_WIDTH - width) / 2, 45);                       \
-  \ 
-        DPTL(F(text))
+#define CENTERBOTTOM(text)                                                      \
+        display.getTextBounds(text, 0, 0, &x1, &y1, &width, NULL);              \
+        DSC((SCREEN_WIDTH - width) / 2,  45 );                                  \ 
+        DPTL(F(text))      
 
-#define FINGER(finger, value)                                 \
-  CENTERTOP(finger);                                          \
-  DSC(((SCREEN_WIDTH - 55) / 2), ((SCREEN_HEIGHT + 30) / 2)); \
-  DPTL(value)
+#define FINGER(finger, value)                                                 \
+      CENTERTOP(finger);                                                      \
+      DSC( ((SCREEN_WIDTH - 55 ) / 2) , ((SCREEN_HEIGHT + 30 ) / 2) );        \
+      DPTL(value)
 
-#define CURSORS()                             \
-  if (cursorPos == 0)                         \
-  {                                           \
-    DSC(116, ((SCREEN_HEIGHT - 15) / 2));     \
-    DPT(F(">"));                              \
-  }                                           \
-  \ 
-        else if (cursorPos == maxMenuItems)   \
-  {                                           \
-    \ 
-          DSC(0, ((SCREEN_HEIGHT - 15) / 2)); \
-    \ 
-          DPT(F("<"));                        \
-    \ 
-                                                \
-  }                                           \
-  else                                        \
-  {                                           \
-    \ 
-        DSC(116, ((SCREEN_HEIGHT - 15) / 2)); \
-    \ 
-        DPT(F(">"));                          \
-    \ 
-        DSC(0, ((SCREEN_HEIGHT - 15) / 2));   \
-    \ 
-        DPT(F("<"));                          \
-  }
-
-#define ICON(gesture) display.drawBitmap(((SCREEN_WIDTH - 45) / 2), ((SCREEN_HEIGHT - 45) / 2), gesture, 45, 45, WHITE)
+  
+#define ICON(gesture) display.drawBitmap(((SCREEN_WIDTH - 45 ) / 2), ((SCREEN_HEIGHT - 45) / 2), gesture, 45, 45, WHITE)  
 
 uint8_t currentMenu = 0;
 uint16_t servoCon = 0;
 uint8_t currentFinger = -1;
-uint8_t maxMenuItems = 0;
+uint8_t maxMenuItems = 0; 
 bool btnClick = 0;
 int8_t oldPosition = -99;
 uint8_t cursorPos = 0;
@@ -121,10 +147,10 @@ uint16_t sensorTreshold = 300;
 bool sensorFist = 0;
 bool sensorSwitch = 0;
 uint16_t valMax = 450;
-uint8_t valMin = 100;
 uint8_t encoderMode = 0;
-long prevMillis = 0;
+long prevMillis = 0; 
 uint16_t sensInterval = 250; // miliseconds
+char level = 0;
 
 int16_t x1;
 int16_t y1;
@@ -137,176 +163,181 @@ MicroMaestro maestro(maestroSerial);
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
-// Declaration for an arm class
-Arm ruka(WRIST, THUMB, INDEX, MIDDLE, RING, PINKY, SPEED, ACCELERATION, OPEN, CLOSE);
+// Declaration for an arm class 
+Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
 
 // Declaration for and encoder class
-Encoder enc(DT, CLK);
+Encoder enc(CLK, DT);
 
-void encoder()
-{
-  int16_t pos = enc.read() / 2;
+Battery battery(7410, 8400, A1);
 
-  if (pos != oldPosition)
-  {
-    switch (encoderMode)
-    {
-    case 0:
-      cursorPos = pos;
-      if (cursorPos >= maxMenuItems)
-      {
-        cursorPos = maxMenuItems;
-        enc.write(maxMenuItems * 2);
-      }
-      else if (cursorPos <= 0)
-      {
-        cursorPos = 0;
-        enc.write(0);
-      }
-      break;
+VoltageReference vRef; 
 
-    case 1:
-      if (oldPosition < pos)
-      {
-        servoCon >= OPEN ? servoCon = OPEN : servoCon += 200;
-      }
-      else if (oldPosition > pos)
-      {
-        servoCon <= CLOSE ? servoCon = CLOSE : servoCon -= 200;
-      }
+
+void encoder(){
+    int16_t pos = enc.read() / 2;
+
+    if(pos != oldPosition){
+      switch(encoderMode){
+        case 0:
+          cursorPos = pos;
+          if(cursorPos >= maxMenuItems){
+            cursorPos = maxMenuItems;
+            enc.write(maxMenuItems*2);
+          }
+          else if(cursorPos <= 0){
+            cursorPos = 0;
+            enc.write(0);
+          }
+          break;
+
+        case 1:
+          if(oldPosition < pos ){
+            servoCon >= OPEN ? servoCon = OPEN : servoCon += 200;
+          } else if (oldPosition > pos){
+            servoCon <= CLOSE ? servoCon = CLOSE : servoCon -= 200;
+          }
+          oldPosition = pos;
+          break;
+
+        case 2:
+          oldPosition < pos ? sensorTreshold += 1 : sensorTreshold -= 1;
+          break;
+          
+        }
       oldPosition = pos;
-      break;
-
-    case 2:
-      oldPosition < pos ? sensorTreshold += 1 : sensorTreshold -= 1;
-      break;
-    }
-    oldPosition = pos;
-  }
+  } 
 }
 
-void cursorReset()
-{
-  encoderMode = 0;
-  cursorPos = 0;
-  enc.write(0);
+void cursors(){
+  if(cursorPos == 0) {              
+        DSC(116,((SCREEN_HEIGHT - 15) / 2) );       
+        DPT(F(">"));                                
+        }                                           
+        else if(cursorPos == maxMenuItems ){        
+          DSC(0,((SCREEN_HEIGHT - 15) / 2) );        
+          DPT(F("<"));                               
+        }                                           
+      else{                                          
+        DSC(116,((SCREEN_HEIGHT - 15) / 2) );        
+        DPT(F(">"));                                 
+        DSC(0,((SCREEN_HEIGHT - 15 ) / 2) );         
+        DPT(F("<"));                                
+      }
 }
 
-void btnCheck()
-{
+void cursorReset(){
+    encoderMode = 0;
+    cursorPos = 0;
+    enc.write(0);
+}
+
+void btnCheck(){
   uint8_t btnCurr = digitalRead(SW);
   btnClick = 0;
 
-  if (btnCurr == LOW && btnPrev == HIGH)
-  {
+  if (btnCurr == LOW && btnPrev == HIGH){
     btnClick = 1;
   }
 
   btnPrev = digitalRead(SW);
 }
 
-void fingerMov()
-{
-  if (encoderMode == 1)
-  {
-    switch (currentFinger)
-    {
-    case 0:
+void fingerMov(){
+  if(encoderMode == 1){
+    switch(currentFinger){
+      case 0:
       ruka.moveFinger(THUMB, servoCon);
       break;
 
-    case 1:
-      ruka.moveFinger(INDEX, servoCon);
+      case 1:
+      ruka.moveFinger(INDEX,servoCon);
       break;
 
-    case 2:
-      ruka.moveFinger(MIDDLE, servoCon);
+      case 2:
+      ruka.moveFinger(MIDDLE,servoCon);
       break;
 
-    case 3:
-      ruka.moveFinger(RING, servoCon);
+      case 3:
+      ruka.moveFinger(RING,servoCon);
       break;
 
-    case 4:
-      ruka.moveFinger(PINKY, servoCon);
+      case 4:
+      ruka.moveFinger(PINKY,servoCon);
       break;
 
-    case 5:
-      ruka.moveFinger(WRIST, servoCon);
+      case 5:
+      ruka.moveFinger(WRIST,servoCon);
       break;
     }
   }
 }
 
-void startScreen()
-{
-  display.clearDisplay();
-  display.setTextSize(2);
+void startScreen(){
+    display.clearDisplay();
+    display.setTextSize(2);
 
-  //CENTERTOP("EMG - HAND");
+    //CENTERTOP("EMG - HAND");
 
-  switch (cursorPos)
-  {
-  case 0:
-    CENTER("MANUAL");
-    break;
-  case 1:
-    CENTER("EMG");
-    break;
-  case 2:
-    CENTER("GESTURES");
-    break;
-  }
+    switch (cursorPos){
+    case 0:
+      CENTER("MANUAL");
+      break;
+    case 1:
+      CENTER("EMG");
+      break;
+    case 2:
+      CENTER("GESTURES");
+      break;
+    case 3:
+      CENTER("BATTERY");
+      break;   
+    }
 
-  CURSORS();
-
+  cursors();
   display.display();
 }
 
-void manualScreen()
-{
+void manualScreen(){
   display.setTextSize(2);
   display.clearDisplay();
   // each screen for one finger
-  switch (cursorPos)
-  {
-  case 0:
-    FINGER("THUMB", ruka.getThumbPos());
-    break;
+  switch (cursorPos) {
+    case 0:
+      FINGER("THUMB", ruka.getThumbPos());
+      break;
 
-  case 1:
-    FINGER("INDEX", ruka.getIndexPos());
-    break;
-  case 2:
-    FINGER("MIDDLE", ruka.getMiddlePos());
-    break;
-  case 3:
-    FINGER("RING", ruka.getRingPos());
-    break;
-  case 4:
-    FINGER("PINKY", ruka.getPinkyPos());
-    break;
-  case 5:
-    FINGER("WRIST", ruka.getWristPos());
-    break;
-  case 6:
-    CENTER("GO BACK");
-    break;
+    case 1:
+      FINGER("INDEX", ruka.getIndexPos());
+      break;
+    case 2:
+      FINGER("MIDDLE", ruka.getMiddlePos());
+      break;
+    case 3:
+      FINGER("RING", ruka.getRingPos());
+      break;
+    case 4:
+      FINGER("PINKY", ruka.getPinkyPos());
+      break;
+    case 5:  
+      FINGER("WRIST",ruka.getWristPos());
+      break;
+    case 6:
+      CENTER("GO BACK");
+      break;  
   }
-
-  CURSORS();
-
+  
+  cursors();
+  
   display.display();
 }
 
-void gesturesScreen()
-{
+void gesturesScreen(){
   display.clearDisplay();
   display.setTextSize(2);
-  switch (cursorPos)
-  {
+  switch (cursorPos) {
   case 0:
-    ICON(fist);
+    ICON(fist) ;
     break;
   case 1:
     ICON(hand);
@@ -316,7 +347,7 @@ void gesturesScreen()
     break;
   case 3:
     ICON(ok);
-    break;
+    break; 
   case 4:
     ICON(thumbsUp);
     break;
@@ -325,297 +356,346 @@ void gesturesScreen()
     break;
   case 6:
     ICON(rock);
-    break;
+    break; 
   case 7:
     ICON(countdown);
     break;
   case 8:
     CENTER("GO BACK");
 
-    break;
+    break;             
   }
 
-  CURSORS();
+  cursors();
 
   display.display();
+
 }
 
-void emgScreen()
-{
+void emgScreen(){
   display.setTextSize(2);
   display.clearDisplay();
 
-  switch (cursorPos)
-  {
+  switch (cursorPos) {
   case 0:
     CENTERTOP("SENSOR");
 
-    if (sensorSwitch)
-    {
+    if(sensorSwitch){
       CENTERBOTTOM("ON");
-    }
-    else
-    {
+    }else{
       CENTERBOTTOM("OFF");
     }
     break;
 
   case 1:
-    CENTERTOP("TRESHOLD");
-    DSC(50, ((SCREEN_HEIGHT - 10) / 2));
+    CENTERTOP("TRESHOLD");  
+    DSC(50, ((SCREEN_HEIGHT - 10) / 2) );
     DPT(sensorTreshold);
-
+    
     break;
-
+  
   case 2:
-    CENTERTOP("VALUE");
+    CENTERTOP("VALUE");  
 
-    DSC(60, ((SCREEN_HEIGHT - 10) / 2));
+    DSC(60, ((SCREEN_HEIGHT - 10) / 2) );
     DPT(sensorValue);
 
     display.setTextSize(1);
-    DSC(5, 50);
-    DPT("MAX:");
-    DSC(30, 50);
+    DSC(5 , 50);
+    DPT("MAX:");  
+    DSC(30 , 50);        
     DPTL(valMax);
 
-    DSC(80, 50);
-    DPT("MIN:");
-    DSC(105, 50);
-    DPT(valMin);
     display.setTextSize(2);
-
+    
     break;
-
+  
   case 3:
     CENTER("GO BACK");
     break;
   }
+ 
+  cursors();
+  
+  display.display();
+}
 
-  CURSORS();
+void batteryScreen(){
+  unsigned long currentMillis = millis();
+  
+  display.setTextSize(1);
+  display.clearDisplay();
+
+  if(currentMillis - prevMillis > 10000){
+    prevMillis = currentMillis;  
+    level = battery.level(battery.voltage());
+   
+  }
+  DSC(40,40);
+  DPTL(level);
+  DSC(78, 40);
+  DPTL(F("%"));
 
   display.display();
 }
 
-void menuControl()
-{
+void menuControl() {
 
-  /*
+
+/*
   currentMenu = 0 -> Main menu
   currentMenu = 1 -> Manual handel menu 
   currentMenu = 2 -> EMG senzor menu
   currentMenu = 3 -> Gestures menu
 */
 
+
   //Main menu
-  if (currentMenu == 0)
-  {
-    maxMenuItems = 2;
-    if (btnClick == 1)
-    {
-      switch (cursorPos)
-      {
-      case 0:
-        currentMenu = 1;
-        cursorReset();
-        break;
+  if(currentMenu == 0){
+    maxMenuItems = 3;
+    if(btnClick == 1){
+        switch (cursorPos){
+        case 0:
+          currentMenu = 1;
+          cursorReset();
+          break;
 
-      case 1:
-        currentMenu = 2;
-        cursorReset();
-        break;
+        case 1:
+          currentMenu = 2;
+          cursorReset();
+          break;  
 
-      case 2:
-        currentMenu = 3;
-        cursorReset();
-        break;
-      }
+        case 2:
+          currentMenu = 3;
+          cursorReset();
+          break;
+
+        case 3:
+          currentMenu = 4;
+          cursorReset();
+          break;    
+      }   
     }
   }
 
   // Manual menu
-  else if (currentMenu == 1)
-  {
+  else if (currentMenu == 1){
     maxMenuItems = 6;
-    if (btnClick == 1)
-    {
+    if(btnClick == 1){
       encoderMode != 1 ? encoderMode = 1 : encoderMode = 0;
       servoCon = 0;
+     
+      switch (cursorPos){
+        case 0:
+            currentFinger = 0;
+            enc.write(currentFinger*2);
+            servoCon += ruka.getThumbPos();            
+          break;
 
-      switch (cursorPos)
-      {
-      case 0:
-        currentFinger = 0;
-        enc.write(currentFinger * 2);
-        servoCon += ruka.getThumbPos();
-        break;
+        case 1:        
+            currentFinger = 1;
+            enc.write(currentFinger*2);
+            servoCon += ruka.getIndexPos();                     
+          break;  
 
-      case 1:
-        currentFinger = 1;
-        enc.write(currentFinger * 2);
-        servoCon += ruka.getIndexPos();
-        break;
-
-      case 2:
-        currentFinger = 2;
-        enc.write(currentFinger * 2);
-        servoCon += ruka.getMiddlePos();
-        break;
-
-      case 3:
-        currentFinger = 3;
-        enc.write(currentFinger * 2);
-        servoCon += ruka.getRingPos();
-        break;
-
-      case 4:
-        currentFinger = 4;
-        enc.write(currentFinger * 2);
-        servoCon += ruka.getPinkyPos();
-        break;
-
-      case 5:
-        currentFinger = 5;
-        enc.write(currentFinger * 2);
-        servoCon += ruka.getWristPos();
-        break;
-
-      case 6:
-        currentMenu = 0;
-        cursorReset();
-        break;
-      }
+        case 2:                   
+            currentFinger = 2;
+            enc.write(currentFinger*2);
+            servoCon += ruka.getMiddlePos();                   
+          break;  
+        
+        case 3:                 
+            currentFinger = 3;
+            enc.write(currentFinger*2);
+            servoCon += ruka.getRingPos();                    
+          break;  
+        
+        case 4:                       
+            currentFinger = 4;
+            enc.write(currentFinger*2);
+            servoCon += ruka.getPinkyPos();                    
+          break;  
+        
+        case 5:       
+            currentFinger = 5;
+            enc.write(currentFinger*2);
+            servoCon += ruka.getWristPos();  
+          break;  
+        
+        case 6:
+          currentMenu = 0;
+          cursorReset();
+          break;  
+          
+        }
     }
   }
 
   // EMG screen
-  else if (currentMenu == 2)
-  {
+  else if (currentMenu == 2){
     maxMenuItems = 3;
-    if (btnClick == 1)
-    {
-      switch (cursorPos)
-      {
-      case 0:
-        sensorSwitch != 1 ? sensorSwitch = 1 : sensorSwitch = 0;
-        break;
+    if(btnClick == 1){
+      switch (cursorPos){
+        case 0:
+          sensorSwitch != 1 ? sensorSwitch = 1 : sensorSwitch = 0;
+        break;  
 
-      case 1:
-        encoderMode != 2 ? encoderMode = 2 : encoderMode = 0;
-        if (enc.read() / 2 != 2)
-          enc.write(2);
+        case 1:
+          encoderMode != 2 ? encoderMode = 2 : encoderMode = 0;
+          if(enc.read() / 2 != 2)
+            enc.write(2);
 
-        break;
+          break;
 
-      case 2:
-        valMax = 350;
-        valMin = 0;
-        break;
-
-      case 3:
-
-        currentMenu = 0;
-        cursorReset();
-        break;
+        case 2:
+          valMax = 350;
+          break;
+          
+        case 3:
+          
+          currentMenu = 0;
+          cursorReset();
+          break;
       }
     }
   }
 
   //Gestures screen
-  else if (currentMenu == 3)
-  {
+  else if (currentMenu == 3){
     maxMenuItems = 8;
-    if (btnClick == 1)
-    {
-      switch (cursorPos)
-      {
-      case 0:
-        ruka.closeFist();
-        break;
+    if(btnClick == 1){
+      switch (cursorPos){
+        case 0:
+          ruka.closeFist();
+          break;
 
-      case 1:
-        ruka.openFist();
-        break;
-      case 2:
-        ruka.peace();
-        break;
+        case 1:
+          ruka.openFist();
+          break;
+        case 2:
+          ruka.peace();
+          break;
 
-      case 3:
-        ruka.ok();
-        break;
+        case 3:
+          ruka.ok();
+          break;
 
-      case 4:
-        ruka.thumbsUp();
-        break;
+        case 4:
+          ruka.thumbsUp();
+          break;
 
-      case 5:
-        ruka.callMe();
-        break;
+        case 5:
+          ruka.callMe();
+          break;
 
-      case 6:
-        ruka.rock();
-        break;
+        case 6:
+          ruka.rock();
+          break; 
 
-      case 7:
-        ruka.countdown();
-        break;
+        case 7:
+          ruka.countdown();
+          break;
 
-      case 8:
-        currentMenu = 0;
-        cursorReset();
-        break;
+        case 8:
+          currentMenu = 0;
+          cursorReset();
+          break;
       }
     }
   }
+
+  // Battery status menu
+  else if(currentMenu == 4){
+    if(btnClick == 1){
+        currentMenu = 0;
+        cursorReset();
+    }
+
+  }
 }
 
-void sensor()
-{
+void sensor (){
   sensorValue = analogRead(A0);
   unsigned long currentMillis = millis();
 
-  if (sensorValue >= sensorTreshold && sensorFist == 0)
-  {
+
+  if(sensorValue >= sensorTreshold && sensorFist == 0){
     //sensorFist = 1;
-    if (currentMillis - prevMillis > sensInterval)
-    {
+    if(currentMillis - prevMillis > sensInterval){
+       prevMillis = currentMillis;  
       sensorFist = 1;
     }
   }
-  else if (sensorValue >= sensorTreshold && sensorFist == 1)
-  {
+  else if (sensorValue >= sensorTreshold && sensorFist == 1){
     //sensorFist = 0;
-    if (currentMillis - prevMillis > sensInterval)
-    {
+    if(currentMillis - prevMillis > sensInterval){
+       prevMillis = currentMillis;  
       sensorFist = 0;
     }
-  }
+  } 
 
-  if (sensorValue > valMax)
-  {
+  if(sensorValue > valMax){
     valMax = sensorValue;
-  }
-  else if (sensorValue < valMin)
-  {
-    valMin = sensorValue;
   }
 }
 
-void setup()
-{
+void batteryStatus(){
+  int v = battery.voltage();
+
+  if (battery.level(v) >= 75) {
+        // blue: everything is fine
+        digitalWrite(RED, LOW);
+        digitalWrite(GREEN, LOW);
+        digitalWrite(BLUE, HIGH);
+        noTone(BUZZER);
+    } else if (battery.level(v) >= 50) {
+        // green: battery is ok, but not full
+        digitalWrite(RED, LOW);
+        digitalWrite(GREEN, HIGH);
+        digitalWrite(BLUE, LOW);
+        noTone(BUZZER);
+    } else if (battery.level(v) >= 20) {
+        // yellow: battery is getting low
+        digitalWrite(RED, HIGH);
+        digitalWrite(GREEN, HIGH);
+        digitalWrite(BLUE, LOW);
+        noTone(BUZZER);
+    } else if (battery.level(v) >= 5) {
+        // red: time to change the battery
+        digitalWrite(RED, HIGH);
+        digitalWrite(GREEN, LOW);
+        digitalWrite(BLUE, LOW);
+        tone(BUZZER, 1000);
+    } else{
+        digitalWrite(RED, HIGH);
+        digitalWrite(GREEN, LOW);
+        digitalWrite(BLUE, LOW);
+        tone(BUZZER, 1000);
+    }
+  
+  
+}
+
+void setup(){
   pinMode(SW, INPUT_PULLUP);
+  pinMode(RED, OUTPUT);
+  pinMode(GREEN, OUTPUT);
+  pinMode(BLUE, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
+
   btnPrev = digitalRead(SW);
 
-  // Set the serial baud rate.
+  // Set the serial baud rate.     
   Serial.begin(115200);
   maestroSerial.begin(9600);
+  vRef.begin();
+  battery.begin(vRef.readVcc(), 2.0);
 
-  if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR))
-  {
+  if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) { 
     Serial.println("SSD1306 allocation failed");
-    for (;;)
-      ; // Don't proceed, loop forever
+    for(;;); // Don't proceed, loop forever
   }
+  
   display.clearDisplay();
   display.setTextColor(WHITE);
   display.drawBitmap(0, 0, loadIcon, 128, 64, WHITE);
@@ -623,37 +703,43 @@ void setup()
   delay(2000);
 
   ruka.openFist();
+  digitalWrite(RED, LOW);
+  digitalWrite(GREEN, LOW);
+  digitalWrite(BLUE, LOW);
+
 }
 
-void loop()
-{
+void loop(){
 
-  if (sensorSwitch)
-  {
+  if(sensorSwitch){
     sensor();
     sensorFist == 1 ? ruka.closeFist() : ruka.openFist();
   }
 
+  batteryStatus();
   encoder();
   btnCheck();
   menuControl();
 
-  switch (currentMenu)
-  {
-  case 0:
-    startScreen();
-    break;
-  case 1:
-    manualScreen();
-    fingerMov();
-    break;
-  case 2:
-    emgScreen();
-    break;
-  case 3:
-    gesturesScreen();
-    break;
-  }
-  //PTL(sensorFist);
-  delay(10);
+  switch (currentMenu) {
+    case 0:
+      startScreen();
+      break;
+    case 1:
+      manualScreen();
+      fingerMov(); 
+      break;
+    case 2:
+      emgScreen();
+      break;
+    case 3:
+      gesturesScreen();
+      break;
+    case 4:
+      batteryScreen();
+      break;       
+  }  
+
+ delay(10);
 }
+
