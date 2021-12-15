@@ -150,7 +150,7 @@ uint16_t valMax = 450;
 uint8_t encoderMode = 0;
 long prevMillis = 0; 
 uint16_t sensInterval = 250; // miliseconds
-char level = 0;
+uint8_t level = 0;
 
 int16_t x1;
 int16_t y1;
@@ -610,7 +610,6 @@ void menuControl() {
         currentMenu = 0;
         cursorReset();
     }
-
   }
 }
 
@@ -742,4 +741,3 @@ void loop(){
 
  delay(10);
 }
-
