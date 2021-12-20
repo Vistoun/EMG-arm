@@ -303,6 +303,7 @@ void manualScreen(){
   display.clearDisplay();
   // each screen for one finger
   switch (cursorPos) {
+    /*
     case 0:
       FINGER("THUMB", ruka.getThumbPos());
       break;
@@ -321,6 +322,28 @@ void manualScreen(){
       break;
     case 5:  
       FINGER("WRIST",ruka.getWristPos());
+      break;
+    case 6:
+      CENTER("GO BACK");
+      break;  
+      */
+    case 0:
+      CENTER("THUMB");
+      break;
+    case 1:
+      CENTER("INDEX");
+      break;
+    case 2:
+      CENTER("MIDDLE");
+      break;
+    case 3:
+      CENTER("RING");
+      break;
+    case 4:
+      CENTER("PINKY");
+      break;
+    case 5:  
+      CENTER("WRIST");
       break;
     case 6:
       CENTER("GO BACK");
