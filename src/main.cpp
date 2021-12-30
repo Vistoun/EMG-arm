@@ -67,7 +67,7 @@ Maestro TX -> 9 (RX)
   #define maestroSerial SERIAL_PORT_HARDWARE_OPEN
 #else
   #include <SoftwareSerial.h>
-  SoftwareSerial maestroSerial(10, 11);
+  SoftwareSerial maestroSerial(9, 11);
 #endif
 
 // Define fingers servo pin, connected to micro meastro
@@ -92,15 +92,11 @@ Maestro TX -> 9 (RX)
 #define OLED_ADDR   0x3C // OLED I2C address
 
 // Encoder pins 
-#define CLK 3 
-#define DT 2
+#define CLK 2 
+#define DT 3
 #define SW 4 // this port is used for button function on encoder
 
-#define RED 7
-#define GREEN 6
-#define BLUE 5
-
-#define BUZZER 13
+#define BUZZER 8
 
 #define PT(s) Serial.print(s)  //makes life easier
 #define PTL(s) Serial.println(s)
@@ -110,25 +106,27 @@ Maestro TX -> 9 (RX)
 #define DSC(x,y) display.setCursor(x,y)
 
 
-#define CENTERTOP(text)                                                       \
-        display.getTextBounds(text, 0, 0, &x1, &y1, &width, NULL);            \
-        DSC((SCREEN_WIDTH - width) / 2, 1);                                   \ 
+#define CENTERTOP(text)                                                          \
+        display.getTextBounds(text, 0, 0, &x1, &y1, &width, NULL);               \
+        DSC((SCREEN_WIDTH - width) / 2, 1);                                      \ 
         DPTL(F(text))
 
-#define CENTER(text)                                                              \
-        display.getTextBounds(text, 0, 0, &x1, &y1, &width, &height);             \
-        DSC((SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - height) / 2);            \ 
+#define CENTER(text)                                                             \
+        display.getTextBounds(text, 0, 0, &x1, &y1, &width, &height);            \
+        DSC((SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - height) / 2);           \ 
         DPTL(F(text))     
 
 #define CENTERBOTTOM(text)                                                      \
         display.getTextBounds(text, 0, 0, &x1, &y1, &width, NULL);              \
         DSC((SCREEN_WIDTH - width) / 2,  45 );                                  \ 
-        DPTL(F(text))      
+        DPTL(F(text))                                                           
 
-#define FINGER(finger, value)                                                 \
-      CENTERTOP(finger);                                                      \
-      DSC( ((SCREEN_WIDTH - 55 ) / 2) , ((SCREEN_HEIGHT + 30 ) / 2) );        \
-      DPTL(value)
+#define FINGER(finger, value)                                                   \
+      CENTERTOP(finger);                                                        \
+      DSC(52,50);                                                               \ 
+      display.setTextSize(1);                                                   \
+      DPTL(value);                                                              \
+      display.setTextSize(2)
 
   
 #define ICON(gesture) display.drawBitmap(((SCREEN_WIDTH - 45 ) / 2), ((SCREEN_HEIGHT - 45) / 2), gesture, 45, 45, WHITE)  
@@ -139,29 +137,27 @@ uint8_t currentFinger = -1;
 uint8_t maxMenuItems = 0; 
 bool btnClick = 0;
 int8_t oldPosition = -99;
-uint8_t cursorPos = 0;
+int8_t cursorPos = 0;
 uint8_t servoPos = 0;
 uint8_t btnPrev;
 uint16_t sensorValue = 0;
-uint16_t sensorTreshold = 300;
+uint16_t sensorTreshold = 450;
 bool sensorFist = 0;
 bool sensorSwitch = 0;
-uint16_t valMax = 450;
 uint8_t encoderMode = 0;
 long prevMillis = 0; 
-uint16_t sensInterval = 250; // miliseconds
-uint8_t level = 0;
+uint16_t sensInterval = 500; // miliseconds
 
 int16_t x1;
 int16_t y1;
 uint16_t width;
 uint16_t height;
 
-// Declaration for an Micro meastro connected to serial pins(9, 8)
-MicroMaestro maestro(maestroSerial);
-
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
+// Declaration for an Micro meastro connected to serial pins(9, 11)
+MicroMaestro maestro(maestroSerial);
 
 // Declaration for an arm class 
 Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
@@ -174,32 +170,43 @@ Battery battery(7410, 8400, A1);
 VoltageReference vRef; 
 
 
+// Handle the postion reading of encoder
 void encoder(){
-    int16_t pos = enc.read() / 2;
+    // Read data from encoder 
+    int16_t pos = enc.read() / 2; // Devided by 2, becouse the reading is by multiplied by 2 
 
+    // if the postion is different than the old one 
     if(pos != oldPosition){
+
+      //Change the behavior of encoder, by changing the encoderMode 
       switch(encoderMode){
+
+        // Use encoder as cursor to switch screens on display
         case 0:
           cursorPos = pos;
-          if(cursorPos >= maxMenuItems){
+
+          //Min and max screen pages limit 
+          if(cursorPos > maxMenuItems){
             cursorPos = maxMenuItems;
             enc.write(maxMenuItems*2);
           }
-          else if(cursorPos <= 0){
+  
+          else if(cursorPos < 0){
             cursorPos = 0;
             enc.write(0);
           }
           break;
 
+        // Use encoder for changing the servo positon  
         case 1:
           if(oldPosition < pos ){
             servoCon >= OPEN ? servoCon = OPEN : servoCon += 200;
           } else if (oldPosition > pos){
             servoCon <= CLOSE ? servoCon = CLOSE : servoCon -= 200;
           }
-          oldPosition = pos;
           break;
 
+        // Use encoder for changing the sensorTreshold 
         case 2:
           oldPosition < pos ? sensorTreshold += 1 : sensorTreshold -= 1;
           break;
@@ -209,6 +216,7 @@ void encoder(){
   } 
 }
 
+// Display cursors to improve orientation between screen pages 
 void cursors(){
   if(cursorPos == 0) {              
         DSC(116,((SCREEN_HEIGHT - 15) / 2) );       
@@ -226,13 +234,15 @@ void cursors(){
       }
 }
 
+// Reset the cursor values to 0 
 void cursorReset(){
     encoderMode = 0;
     cursorPos = 0;
     enc.write(0);
 }
 
-void btnCheck(){
+// Handle the encoder button 
+void encButton(){
   uint8_t btnCurr = digitalRead(SW);
   btnClick = 0;
 
@@ -243,7 +253,8 @@ void btnCheck(){
   btnPrev = digitalRead(SW);
 }
 
-void fingerMov(){
+// Move with the finger with encoder 
+void fingerMove(){
   if(encoderMode == 1){
     switch(currentFinger){
       case 0:
@@ -273,11 +284,10 @@ void fingerMov(){
   }
 }
 
-void startScreen(){
+// Display the main menu 
+void menuScreen(){
     display.clearDisplay();
     display.setTextSize(2);
-
-    //CENTERTOP("EMG - HAND");
 
     switch (cursorPos){
     case 0:
@@ -288,26 +298,23 @@ void startScreen(){
       break;
     case 2:
       CENTER("GESTURES");
-      break;
-    case 3:
-      CENTER("BATTERY");
-      break;   
+      break; 
     }
 
   cursors();
   display.display();
 }
 
+// Display the Manual menu 
 void manualScreen(){
   display.setTextSize(2);
   display.clearDisplay();
-  // each screen for one finger
+
+  // one screen for one finger
   switch (cursorPos) {
-    /*
     case 0:
       FINGER("THUMB", ruka.getThumbPos());
       break;
-
     case 1:
       FINGER("INDEX", ruka.getIndexPos());
       break;
@@ -326,41 +333,20 @@ void manualScreen(){
     case 6:
       CENTER("GO BACK");
       break;  
-      */
-    case 0:
-      CENTER("THUMB");
-      break;
-    case 1:
-      CENTER("INDEX");
-      break;
-    case 2:
-      CENTER("MIDDLE");
-      break;
-    case 3:
-      CENTER("RING");
-      break;
-    case 4:
-      CENTER("PINKY");
-      break;
-    case 5:  
-      CENTER("WRIST");
-      break;
-    case 6:
-      CENTER("GO BACK");
-      break;  
   }
   
   cursors();
-  
   display.display();
 }
 
+
+// Display the gestures screen
 void gesturesScreen(){
   display.clearDisplay();
   display.setTextSize(2);
   switch (cursorPos) {
   case 0:
-    ICON(fist) ;
+    ICON(fist);
     break;
   case 1:
     ICON(hand);
@@ -385,118 +371,73 @@ void gesturesScreen(){
     break;
   case 8:
     CENTER("GO BACK");
-
     break;             
   }
 
   cursors();
-
   display.display();
-
 }
 
+
+// Display the emg screen 
 void emgScreen(){
   display.setTextSize(2);
   display.clearDisplay();
 
   switch (cursorPos) {
   case 0:
-    CENTERTOP("SENSOR");
-
-    if(sensorSwitch){
-      CENTERBOTTOM("ON");
-    }else{
-      CENTERBOTTOM("OFF");
-    }
-    break;
-
-  case 1:
     CENTERTOP("TRESHOLD");  
-    DSC(50, ((SCREEN_HEIGHT - 10) / 2) );
-    DPT(sensorTreshold);
-    
-    break;
-  
-  case 2:
-    CENTERTOP("VALUE");  
-
-    DSC(60, ((SCREEN_HEIGHT - 10) / 2) );
-    DPT(sensorValue);
-
     display.setTextSize(1);
-    DSC(5 , 50);
-    DPT("MAX:");  
-    DSC(30 , 50);        
-    DPTL(valMax);
-
+    DSC(52, ((SCREEN_HEIGHT - 10) / 2) );
+    DPT(sensorTreshold);
     display.setTextSize(2);
-    
     break;
   
-  case 3:
-    CENTER("GO BACK");
+  case 1:
+    sensorFist? ICON(fist): ICON(hand);
+    DSC(52,55);                                                              
+    display.setTextSize(1);                                                 
+    DPTL(sensorValue);                                                             
+    display.setTextSize(2);
     break;
   }
  
   cursors();
-  
   display.display();
 }
 
-void batteryScreen(){
-  unsigned long currentMillis = millis();
-  
-  display.setTextSize(1);
-  display.clearDisplay();
-
-  if(currentMillis - prevMillis > 10000){
-    prevMillis = currentMillis;  
-    level = battery.level(battery.voltage());
-   
-  }
-  DSC(40,40);
-  DPTL(level);
-  DSC(78, 40);
-  DPTL(F("%"));
-
-  display.display();
-}
 
 void menuControl() {
 
-
 /*
   currentMenu = 0 -> Main menu
-  currentMenu = 1 -> Manual handel menu 
-  currentMenu = 2 -> EMG senzor menu
+  currentMenu = 1 -> Manual  menu 
+  currentMenu = 2 -> EMG  menu
   currentMenu = 3 -> Gestures menu
 */
 
 
   //Main menu
   if(currentMenu == 0){
-    maxMenuItems = 3;
+    maxMenuItems = 2;
     if(btnClick == 1){
         switch (cursorPos){
+         // Manual 
         case 0:
           currentMenu = 1;
           cursorReset();
           break;
-
+        // EMG
         case 1:
           currentMenu = 2;
+          sensorSwitch = 1;
           cursorReset();
           break;  
-
+        // Gestures
         case 2:
           currentMenu = 3;
           cursorReset();
           break;
-
-        case 3:
-          currentMenu = 4;
-          cursorReset();
-          break;    
       }   
     }
   }
@@ -556,29 +497,25 @@ void menuControl() {
 
   // EMG screen
   else if (currentMenu == 2){
-    maxMenuItems = 3;
+    maxMenuItems = 2;
     if(btnClick == 1){
       switch (cursorPos){
         case 0:
-          sensorSwitch != 1 ? sensorSwitch = 1 : sensorSwitch = 0;
+          encoderMode != 2 ? encoderMode = 2 : encoderMode = 0;
+          if(enc.read() / 2 != 1){
+             enc.write(1);
+          }
         break;  
 
         case 1:
-          encoderMode != 2 ? encoderMode = 2 : encoderMode = 0;
-          if(enc.read() / 2 != 2)
-            enc.write(2);
-
-          break;
+          sensorFist = 0;
+        break;
 
         case 2:
-          valMax = 350;
-          break;
-          
-        case 3:
-          
+          sensorSwitch = 0;
           currentMenu = 0;
           cursorReset();
-          break;
+        break;
       }
     }
   }
@@ -626,83 +563,32 @@ void menuControl() {
       }
     }
   }
-
-  // Battery status menu
-  else if(currentMenu == 4){
-    if(btnClick == 1){
-        currentMenu = 0;
-        cursorReset();
-    }
-  }
 }
 
 void sensor (){
   sensorValue = analogRead(A0);
   unsigned long currentMillis = millis();
 
-
+  // Swap for fist flag
   if(sensorValue >= sensorTreshold && sensorFist == 0){
-    //sensorFist = 1;
+    // Wait 250ms to prevent unwanted switching
     if(currentMillis - prevMillis > sensInterval){
-       prevMillis = currentMillis;  
       sensorFist = 1;
+      prevMillis = currentMillis;  
     }
   }
   else if (sensorValue >= sensorTreshold && sensorFist == 1){
-    //sensorFist = 0;
     if(currentMillis - prevMillis > sensInterval){
-       prevMillis = currentMillis;  
       sensorFist = 0;
+      prevMillis = currentMillis;  
     }
   } 
 
-  if(sensorValue > valMax){
-    valMax = sensorValue;
-  }
 }
 
-void batteryStatus(){
-  int v = battery.voltage();
-
-  if (battery.level(v) >= 75) {
-        // blue: everything is fine
-        digitalWrite(RED, LOW);
-        digitalWrite(GREEN, LOW);
-        digitalWrite(BLUE, HIGH);
-        noTone(BUZZER);
-    } else if (battery.level(v) >= 50) {
-        // green: battery is ok, but not full
-        digitalWrite(RED, LOW);
-        digitalWrite(GREEN, HIGH);
-        digitalWrite(BLUE, LOW);
-        noTone(BUZZER);
-    } else if (battery.level(v) >= 20) {
-        // yellow: battery is getting low
-        digitalWrite(RED, HIGH);
-        digitalWrite(GREEN, HIGH);
-        digitalWrite(BLUE, LOW);
-        noTone(BUZZER);
-    } else if (battery.level(v) >= 5) {
-        // red: time to change the battery
-        digitalWrite(RED, HIGH);
-        digitalWrite(GREEN, LOW);
-        digitalWrite(BLUE, LOW);
-        tone(BUZZER, 1000);
-    } else{
-        digitalWrite(RED, HIGH);
-        digitalWrite(GREEN, LOW);
-        digitalWrite(BLUE, LOW);
-        tone(BUZZER, 1000);
-    }
-  
-  
-}
 
 void setup(){
   pinMode(SW, INPUT_PULLUP);
-  pinMode(RED, OUTPUT);
-  pinMode(GREEN, OUTPUT);
-  pinMode(BLUE, OUTPUT);
   pinMode(BUZZER, OUTPUT);
 
   btnPrev = digitalRead(SW);
@@ -725,42 +611,36 @@ void setup(){
   delay(2000);
 
   ruka.openFist();
-  digitalWrite(RED, LOW);
-  digitalWrite(GREEN, LOW);
-  digitalWrite(BLUE, LOW);
 
 }
 
 void loop(){
-
   if(sensorSwitch){
     sensor();
     sensorFist == 1 ? ruka.closeFist() : ruka.openFist();
   }
 
-  batteryStatus();
   encoder();
-  btnCheck();
-  menuControl();
+  encButton();
 
+  menuControl();
   switch (currentMenu) {
     case 0:
-      startScreen();
+      menuScreen();
       break;
     case 1:
       manualScreen();
-      fingerMov(); 
+      fingerMove(); 
       break;
     case 2:
       emgScreen();
       break;
     case 3:
       gesturesScreen();
-      break;
-    case 4:
-      batteryScreen();
-      break;       
-  }  
+      break;     
+  } 
+
+  battery.level() == 1 ? tone(BUZZER, 1000) : noTone(BUZZER);
 
  delay(10);
 }
