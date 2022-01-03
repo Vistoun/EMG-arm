@@ -10,9 +10,7 @@
 #include "Battery.h"
 #include <VoltageReference.h>
 
-
-
-/*
+/* PINS
 
 ENCODER:
 GND -> GND 
@@ -48,9 +46,7 @@ GND -> GND
 + -> 5V
 SIGNAL -> A0
 
-
 */
-
 
 
 /* On boards with a hardware serial port available for use, use
@@ -96,31 +92,35 @@ Maestro TX -> 9 (RX)
 #define DT 3
 #define SW 4 // this port is used for button function on encoder
 
+// Buzzer pin
 #define BUZZER 8
 
-#define PT(s) Serial.print(s)  //makes life easier
+// Macros to make coding easier 
+#define PT(s) Serial.print(s)  
 #define PTL(s) Serial.println(s)
 
 #define DPT(s) display.print(s)
 #define DPTL(s) display.println(s)
 #define DSC(x,y) display.setCursor(x,y)
 
-
+// Draw text at the center top of the display
 #define CENTERTOP(text)                                                          \
         display.getTextBounds(text, 0, 0, &x1, &y1, &width, NULL);               \
         DSC((SCREEN_WIDTH - width) / 2, 1);                                      \ 
         DPTL(F(text))
 
+// Draw text at the center of the display
 #define CENTER(text)                                                             \
         display.getTextBounds(text, 0, 0, &x1, &y1, &width, &height);            \
         DSC((SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - height) / 2);           \ 
         DPTL(F(text))     
-
+// Draw text at center bottom of the display
 #define CENTERBOTTOM(text)                                                      \
         display.getTextBounds(text, 0, 0, &x1, &y1, &width, NULL);              \
         DSC((SCREEN_WIDTH - width) / 2,  45 );                                  \ 
         DPTL(F(text))                                                           
 
+// Draw finger name at the top and its current position 
 #define FINGER(finger, value)                                                   \
       CENTERTOP(finger);                                                        \
       DSC(52,50);                                                               \ 
@@ -128,9 +128,10 @@ Maestro TX -> 9 (RX)
       DPTL(value);                                                              \
       display.setTextSize(2)
 
-  
+// Draw icon in the center of the screen   
 #define ICON(gesture) display.drawBitmap(((SCREEN_WIDTH - 45 ) / 2), ((SCREEN_HEIGHT - 45) / 2), gesture, 45, 45, WHITE)  
 
+          
 uint8_t currentMenu = 0;
 uint16_t servoCon = 0;
 uint8_t currentFinger = -1;
@@ -148,6 +149,7 @@ uint8_t encoderMode = 0;
 long prevMillis = 0; 
 uint16_t sensInterval = 500; // miliseconds
 
+// these are for CENTER/TOP/BOTTOM to find out width and height of the text to calculate the center postion 
 int16_t x1;
 int16_t y1;
 uint16_t width;
@@ -162,11 +164,13 @@ MicroMaestro maestro(maestroSerial);
 // Declaration for an arm class 
 Arm ruka(WRIST,THUMB,INDEX,MIDDLE,RING,PINKY,SPEED,ACCELERATION,OPEN,CLOSE);
 
-// Declaration for and encoder class
+// Declaration for an encoder class
 Encoder enc(CLK, DT);
 
-Battery battery(7410, 8400, A1);
+// Declaration for an battery clas to get battery percentage and volatage
+Battery battery(7410, 8400, A1); // min battery voltage, max battery volatage, analog pin  
 
+// To get a more accurate interval voltage of Arduino 
 VoltageReference vRef; 
 
 
@@ -253,7 +257,7 @@ void encButton(){
   btnPrev = digitalRead(SW);
 }
 
-// Move with the finger with encoder 
+// Move with the finger with the encoder 
 void fingerMove(){
   if(encoderMode == 1){
     switch(currentFinger){
@@ -288,7 +292,8 @@ void fingerMove(){
 void menuScreen(){
     display.clearDisplay();
     display.setTextSize(2);
-
+    
+    // Switch the screen pages by changing cursor position 
     switch (cursorPos){
     case 0:
       CENTER("MANUAL");
@@ -386,6 +391,7 @@ void emgScreen(){
 
   switch (cursorPos) {
   case 0:
+      
     CENTERTOP("TRESHOLD");  
     display.setTextSize(1);
     DSC(52, ((SCREEN_HEIGHT - 10) / 2) );
@@ -408,7 +414,6 @@ void emgScreen(){
 
 
 void menuControl() {
-
 /*
   currentMenu = 0 -> Main menu
   currentMenu = 1 -> Manual  menu 
@@ -416,21 +421,21 @@ void menuControl() {
   currentMenu = 3 -> Gestures menu
 */
 
-
   //Main menu
   if(currentMenu == 0){
+    // Set the maximum menu pages 
     maxMenuItems = 2;
     if(btnClick == 1){
         switch (cursorPos){
          // Manual 
         case 0:
-          currentMenu = 1;
-          cursorReset();
+          currentMenu = 1; // change the menu to Manual
+          cursorReset(); // reset the cursor
           break;
         // EMG
         case 1:
           currentMenu = 2;
-          sensorSwitch = 1;
+          sensorSwitch = 1; // change the sensor flag, to activate control by EMG sensors 
           cursorReset();
           break;  
         // Gestures
@@ -444,48 +449,51 @@ void menuControl() {
 
   // Manual menu
   else if (currentMenu == 1){
+    /
     maxMenuItems = 6;
     if(btnClick == 1){
+      // change the encoderMode when you click the encoder, to set the servo values 
       encoderMode != 1 ? encoderMode = 1 : encoderMode = 0;
       servoCon = 0;
      
       switch (cursorPos){
+        // Thumb 
         case 0:
             currentFinger = 0;
-            enc.write(currentFinger*2);
+            enc.write(currentFinger*2); // Set the cursor values back to current screen page
             servoCon += ruka.getThumbPos();            
           break;
-
+        // Index  
         case 1:        
             currentFinger = 1;
             enc.write(currentFinger*2);
             servoCon += ruka.getIndexPos();                     
           break;  
-
+        // Middle
         case 2:                   
             currentFinger = 2;
             enc.write(currentFinger*2);
             servoCon += ruka.getMiddlePos();                   
           break;  
-        
+        // Ring
         case 3:                 
             currentFinger = 3;
             enc.write(currentFinger*2);
             servoCon += ruka.getRingPos();                    
           break;  
-        
+        // Pinky
         case 4:                       
             currentFinger = 4;
             enc.write(currentFinger*2);
             servoCon += ruka.getPinkyPos();                    
           break;  
-        
+        // Wrist
         case 5:       
             currentFinger = 5;
             enc.write(currentFinger*2);
             servoCon += ruka.getWristPos();  
           break;  
-        
+        // Go back to main menu
         case 6:
           currentMenu = 0;
           cursorReset();
@@ -500,17 +508,22 @@ void menuControl() {
     maxMenuItems = 2;
     if(btnClick == 1){
       switch (cursorPos){
+        // Set sensor treshold
         case 0:
+          // Change the encoder mode to set sensor treshold value 
           encoderMode != 2 ? encoderMode = 2 : encoderMode = 0;
+          
+          // Set the cursor value back to current screen page
           if(enc.read() / 2 != 1){
              enc.write(1);
           }
         break;  
-
+        // Fist or hand icon indicator 
         case 1:
-          sensorFist = 0;
+          sensorFist = 0; // reset sensorFist flag 
         break;
-
+          
+        // Go back to main menu
         case 2:
           sensorSwitch = 0;
           currentMenu = 0;
@@ -532,6 +545,7 @@ void menuControl() {
         case 1:
           ruka.openFist();
           break;
+          
         case 2:
           ruka.peace();
           break;
@@ -566,12 +580,13 @@ void menuControl() {
 }
 
 void sensor (){
+  // Read the values from EMG sensor
   sensorValue = analogRead(A0);
   unsigned long currentMillis = millis();
 
   // Swap for fist flag
   if(sensorValue >= sensorTreshold && sensorFist == 0){
-    // Wait 250ms to prevent unwanted switching
+    // Wait some time to prevent unwanted switching
     if(currentMillis - prevMillis > sensInterval){
       sensorFist = 1;
       prevMillis = currentMillis;  
@@ -588,35 +603,48 @@ void sensor (){
 
 
 void setup(){
+  // Encoder button
   pinMode(SW, INPUT_PULLUP);
   pinMode(BUZZER, OUTPUT);
-
+  
+  // Read the previous button state 
   btnPrev = digitalRead(SW);
 
   // Set the serial baud rate.     
   Serial.begin(115200);
+  // Set the maestro serial baud rate
   maestroSerial.begin(9600);
+  
+  // Read the interal voltage
   vRef.begin();
+  
   battery.begin(vRef.readVcc(), 2.0);
 
+  // display allocation 
   if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) { 
     Serial.println("SSD1306 allocation failed");
     for(;;); // Don't proceed, loop forever
   }
   
+  // clear the display
   display.clearDisplay();
+  // set the the text color of display
   display.setTextColor(WHITE);
+  // draw a logo 
   display.drawBitmap(0, 0, loadIcon, 128, 64, WHITE);
   display.display();
   delay(2000);
-
+  
+  // Open fist when the program starts 
   ruka.openFist();
 
 }
 
 void loop(){
+  // when sensor flag is on, than do the reading from sensor 
   if(sensorSwitch){
     sensor();
+    
     sensorFist == 1 ? ruka.closeFist() : ruka.openFist();
   }
 
@@ -624,6 +652,7 @@ void loop(){
   encButton();
 
   menuControl();
+  // Draw menu screen by the currentMenu 
   switch (currentMenu) {
     case 0:
       menuScreen();
@@ -640,7 +669,8 @@ void loop(){
       break;     
   } 
 
+  // if the battery level is critical, turn on the buzzer
   battery.level() == 1 ? tone(BUZZER, 1000) : noTone(BUZZER);
 
- delay(10);
+  delay(10);
 }
