@@ -38,16 +38,16 @@
 - ~~Programování ovládaní pomoci displeje a enkodéru~~ 
 
 ### Listopad 
-- Programování senzorů 
-- Dokončování pogramovaní 
-- Optimalizace 
-- Přidělání a modelování hardwareové části ruky 
+- ~~Programování senzorů~~
+- ~~Dokončování pogramovaní 
+- ~~Optimalizace 
+- ~~Přidělání a modelování hardwareové části ruky 
 
 ### Prosinec 
-- Dokumentace 
-- Prezentace 
-- Schemata 
-- Posledni dodělávky
+- ~~Dokumentace 
+- ~~Prezentace 
+- ~~Schemata 
+- ~~Posledni dodělávky
 
 
 ## Zdroje
