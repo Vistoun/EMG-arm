@@ -627,9 +627,13 @@ void setup() {
     ruka.openFist();
 
 }
+// 
+
 
 void loop() {
-    // when sensor flag is on, than do the reading from sensor 
+   
+    
+     // when sensor flag is on, than do the reading from sensor 
     if (sensorSwitch) {
         sensor();
 
@@ -661,4 +665,6 @@ void loop() {
     battery.level() == 1 ? tone(BUZZER, 1000) : noTone(BUZZER);
 
     delay(10);
+    
+
 }
