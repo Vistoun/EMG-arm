@@ -39,15 +39,15 @@
 
 ### Listopad 
 - ~~Programování senzorů~~
-- ~~Dokončování pogramovaní 
-- ~~Optimalizace 
-- ~~Přidělání a modelování hardwareové části ruky 
+- ~~Dokončování pogramovaní ~~
+- ~~Optimalizace ~~
+- ~~Přidělání a modelování hardwareové části ruky ~~
 
 ### Prosinec 
-- ~~Dokumentace 
-- ~~Prezentace 
-- ~~Schemata 
-- ~~Posledni dodělávky
+- ~~Dokumentace ~~
+- ~~Prezentace ~~
+- ~~Schemata ~~
+- ~~Posledni dodělávky~~
 
 
 ## Zdroje
