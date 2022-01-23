@@ -7,7 +7,7 @@
 ## Hardware 
 - InMoov robotic arm 
 - MyoWare Muscle Sensor
-- Arduino NANO
+- Arduino UNO R3
 - I2C OLED display 128x64
 - Rotační enkodér
 - 6xMG995R Servo 
