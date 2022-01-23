@@ -12,6 +12,8 @@
 - Rotační enkodér
 - 6xMG995R Servo 
 - Pololu Micro Maestro 6-CHANNEL
+- LiPol 2s 25C battery 
+- 5V voltage regulator
 
 ### What to do: 
 - Složení ruky
